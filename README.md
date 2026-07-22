@@ -42,9 +42,12 @@ code generation/execution is left as a documented future extension point
 - **RuleBasedPlanner**: works without any API key; handles Japanese and
   simple English phrasing variation ("運ぶ/置く/移動する/移す" /
   "move/carry/place/put")
-- **BasePlanner interface** so `OpenAIPlanner` / `AnthropicPlanner` /
-  `LocalModelPlanner` can be added later without touching the executor or
-  evaluator
+- **BasePlanner interface** so `OpenAIPlanner` / `LocalModelPlanner` can be
+  added later without touching the executor or evaluator
+- **AnthropicPlanner**: calls the Anthropic API to generate a plan as a
+  whitelisted, `Action`-validated JSON array; requires `pip install -e
+  ".[llm]"` and `ANTHROPIC_API_KEY` — every other command still works with
+  neither installed nor set
 - **MockLLMPlanner**: canned-response planner as an LLM-planner stand-in
 - **SafeExecutor**: whitelist-only execution, argument validation, max-step
   limit, structured failure reasons, per-step logging
@@ -101,6 +104,17 @@ cd geniac-cap-practice
 pip install -e ".[dev]"
 ```
 
+To also use `AnthropicPlanner`, install the optional `llm` extra and set an
+API key:
+
+```bash
+pip install -e ".[llm]"
+cp .env.example .env   # then edit .env and set ANTHROPIC_API_KEY=...
+```
+
+`AnthropicPlanner` is only needed for `--planner anthropic`; every other
+command works with neither the extra installed nor a key set.
+
 ## Getting started in GitHub Codespaces
 
 1. Open the repository on GitHub and click **Code → Codespaces → Create
@@ -122,6 +136,7 @@ python -m geniac_cap.cli evaluate
 python -m geniac_cap.cli evaluate --planner rule-based
 python -m geniac_cap.cli evaluate --planner feedback
 python -m geniac_cap.cli evaluate --planner feedback --no-feedback
+python -m geniac_cap.cli evaluate --planner anthropic
 ```
 
 (If you installed with `pip install -e .`, `geniac-cap ...` also works as a

@@ -1,3 +1,4 @@
+from geniac_cap.planners.anthropic_planner import AnthropicPlanner
 from geniac_cap.planners.base import BasePlanner, PlanningContext
 from geniac_cap.planners.feedback import FeedbackPlanner
 from geniac_cap.planners.mock_llm import MockLLMPlanner
@@ -9,4 +10,5 @@ __all__ = [
     "RuleBasedPlanner",
     "MockLLMPlanner",
     "FeedbackPlanner",
+    "AnthropicPlanner",
 ]

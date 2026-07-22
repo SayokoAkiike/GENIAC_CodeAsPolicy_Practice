@@ -15,6 +15,7 @@ from geniac_cap.environment.toy_robot import ToyRobotEnv
 from geniac_cap.evaluation.evaluator import Evaluator, run_single_task
 from geniac_cap.exceptions import GeniacCapError
 from geniac_cap.execution.executor import SafeExecutor
+from geniac_cap.planners.anthropic_planner import AnthropicPlanner
 from geniac_cap.planners.base import BasePlanner, PlanningContext
 from geniac_cap.planners.feedback import FeedbackPlanner
 from geniac_cap.planners.mock_llm import MockLLMPlanner
@@ -30,6 +31,7 @@ _PLANNERS: dict[str, type[BasePlanner] | None] = {
     "rule-based": RuleBasedPlanner,
     "feedback": FeedbackPlanner,
     "mock-llm": MockLLMPlanner,
+    "anthropic": AnthropicPlanner,
 }
 
 

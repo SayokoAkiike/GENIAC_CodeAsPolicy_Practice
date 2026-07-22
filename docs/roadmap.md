@@ -14,11 +14,15 @@ one capability on top of a working, tested foundation.
 
 ## Phase 2 — External LLM planner
 
-- Implement `OpenAIPlanner` / `AnthropicPlanner` / `LocalModelPlanner`
-  against the existing `BasePlanner` interface
-- Add a `--planner openai` / `--planner anthropic` CLI option, gated behind
-  environment variables so the project still runs with zero API keys
-- Compare LLM planner vs. `RuleBasedPlanner` success rate on the same tasks
+- [x] `AnthropicPlanner` implemented against the existing `BasePlanner`
+  interface (`--planner anthropic`), gated behind the optional `llm` extra
+  and `ANTHROPIC_API_KEY` so the project still runs with zero API keys
+- [ ] Implement `OpenAIPlanner` / `LocalModelPlanner` the same way
+- [ ] Compare LLM planner vs. `RuleBasedPlanner` success rate on the same
+  tasks and log it in `docs/experiment-log.md`
+- [ ] Consider whether `AnthropicPlanner` also needs its own
+  execution-feedback repair path (today only `FeedbackPlanner` supports the
+  single-retry loop)
 
 ## Phase 3 — Execution feedback and self-correction
 
