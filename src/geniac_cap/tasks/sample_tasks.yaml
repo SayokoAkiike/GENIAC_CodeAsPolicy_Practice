@@ -1,0 +1,198 @@
+# Sample tasks for the Toy Robot Environment.
+#
+# Each task defines its own small self-contained world (robot_location,
+# object_locations, locations, objects). Healthcare/assistive tasks are
+# limited to object transport / tidying only -- no medication administration
+# or clinical actions are modeled.
+
+- task_id: task_001
+  instruction: "赤いブロックを青い棚に置いてください"
+  initial_state:
+    robot_location: table
+    object_locations:
+      red_block: table
+    locations: [table, blue_shelf]
+    objects: [red_block]
+  goal_state:
+    object_locations:
+      red_block: blue_shelf
+  difficulty: easy
+  category: household
+  expected_objects: [red_block]
+  expected_locations: [table, blue_shelf]
+
+- task_id: task_002
+  instruction: "カップをテーブルからトレイに移してください"
+  initial_state:
+    robot_location: table
+    object_locations:
+      cup: table
+    locations: [table, tray]
+    objects: [cup]
+  goal_state:
+    object_locations:
+      cup: tray
+  difficulty: easy
+  category: kitchen
+  expected_objects: [cup]
+  expected_locations: [table, tray]
+
+- task_id: task_003
+  instruction: "ボトルをキッチンから患者室に運んでください"
+  initial_state:
+    robot_location: kitchen
+    object_locations:
+      bottle: kitchen
+    locations: [kitchen, patient_room]
+    objects: [bottle]
+  goal_state:
+    object_locations:
+      bottle: patient_room
+  difficulty: medium
+  category: healthcare
+  expected_objects: [bottle]
+  expected_locations: [kitchen, patient_room]
+
+- task_id: task_004
+  instruction: "タオルをベッド横に置いてください"
+  initial_state:
+    robot_location: linen_closet
+    object_locations:
+      towel: linen_closet
+    locations: [linen_closet, bedside]
+    objects: [towel]
+  goal_state:
+    object_locations:
+      towel: bedside
+  difficulty: easy
+  category: healthcare
+  expected_objects: [towel]
+  expected_locations: [linen_closet, bedside]
+
+- task_id: task_005
+  instruction: "薬箱をナースステーションへ運んでください"
+  initial_state:
+    robot_location: storage_room
+    object_locations:
+      medicine_box: storage_room
+    locations: [storage_room, nurse_station]
+    objects: [medicine_box]
+  goal_state:
+    object_locations:
+      medicine_box: nurse_station
+  difficulty: medium
+  category: healthcare
+  expected_objects: [medicine_box]
+  expected_locations: [storage_room, nurse_station]
+
+- task_id: task_006
+  instruction: "Move the red block to the blue shelf"
+  initial_state:
+    robot_location: table
+    object_locations:
+      red_block: table
+    locations: [table, blue_shelf]
+    objects: [red_block]
+  goal_state:
+    object_locations:
+      red_block: blue_shelf
+  difficulty: easy
+  category: household
+  expected_objects: [red_block]
+  expected_locations: [table, blue_shelf]
+
+- task_id: task_007
+  instruction: "本を机から本棚に移動してください"
+  initial_state:
+    robot_location: desk
+    object_locations:
+      book: desk
+    locations: [desk, bookshelf]
+    objects: [book]
+  goal_state:
+    object_locations:
+      book: bookshelf
+  difficulty: easy
+  category: office
+  expected_objects: [book]
+  expected_locations: [desk, bookshelf]
+
+- task_id: task_008
+  instruction: "皿をキッチンからテーブルに置いてください"
+  initial_state:
+    robot_location: kitchen
+    object_locations:
+      plate: kitchen
+    locations: [kitchen, table]
+    objects: [plate]
+  goal_state:
+    object_locations:
+      plate: table
+  difficulty: easy
+  category: kitchen
+  expected_objects: [plate]
+  expected_locations: [kitchen, table]
+
+- task_id: task_009
+  instruction: "Carry the water bottle to the nurse station"
+  initial_state:
+    robot_location: kitchen
+    object_locations:
+      water_bottle: kitchen
+    locations: [kitchen, nurse_station]
+    objects: [water_bottle]
+  goal_state:
+    object_locations:
+      water_bottle: nurse_station
+  difficulty: medium
+  category: healthcare
+  expected_objects: [water_bottle]
+  expected_locations: [kitchen, nurse_station]
+
+- task_id: task_010
+  instruction: "緑のブロックを赤い箱に入れてください"
+  initial_state:
+    robot_location: table
+    object_locations:
+      green_block: table
+    locations: [table, red_box]
+    objects: [green_block]
+  goal_state:
+    object_locations:
+      green_block: red_box
+  difficulty: medium
+  category: household
+  expected_objects: [green_block]
+  expected_locations: [table, red_box]
+
+- task_id: task_011
+  instruction: "ノートをオフィスからテーブルに運んでください"
+  initial_state:
+    robot_location: office
+    object_locations:
+      notebook: office
+    locations: [office, table]
+    objects: [notebook]
+  goal_state:
+    object_locations:
+      notebook: table
+  difficulty: easy
+  category: office
+  expected_objects: [notebook]
+  expected_locations: [office, table]
+
+- task_id: task_012
+  instruction: "タオルを浴室からベッドサイドに運んでください"
+  initial_state:
+    robot_location: bathroom
+    object_locations:
+      towel: bathroom
+    locations: [bathroom, bedside]
+    objects: [towel]
+  goal_state:
+    object_locations:
+      towel: bedside
+  difficulty: hard
+  category: healthcare
+  expected_objects: [towel]
+  expected_locations: [bathroom, bedside]
