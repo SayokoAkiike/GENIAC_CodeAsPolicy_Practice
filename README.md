@@ -1,8 +1,7 @@
 ## Overview
 
 This is an independent practice project inspired by the Code-as-Policy
-style tasks expected in GENIAC-PRIZE Theme 2. **It is not an official
-GENIAC project or benchmark implementation.**
+style tasks.
 
 It turns a natural-language instruction (Japanese or simple English) into a
 structured, whitelisted sequence of robot actions, executes that sequence
