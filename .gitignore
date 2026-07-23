@@ -23,6 +23,7 @@ htmlcov/
 results/*.json
 results/*.csv
 results/*.png
+results/*.yaml
 !results/.gitkeep
 
 # Environment variables / secrets

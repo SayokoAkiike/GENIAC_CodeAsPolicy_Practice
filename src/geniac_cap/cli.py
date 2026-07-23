@@ -30,7 +30,8 @@ from geniac_cap.planners.feedback import FeedbackPlanner
 from geniac_cap.planners.gemini_planner import GeminiPlanner
 from geniac_cap.planners.mock_llm import MockLLMPlanner
 from geniac_cap.planners.rule_based import RuleBasedPlanner
-from geniac_cap.tasks.loader import get_task_by_id, load_tasks
+from geniac_cap.tasks.generator import generate_tasks
+from geniac_cap.tasks.loader import get_task_by_id, load_tasks, save_tasks_to_yaml
 from geniac_cap.utils.logging import configure_logging, get_logger
 
 app = typer.Typer(add_completion=False, help="GENIAC Code-as-Policy practice CLI")
@@ -94,6 +95,44 @@ def list_tasks() -> None:
     for task in tasks:
         table.add_row(task.task_id, task.category.value, task.difficulty.value, task.instruction)
     console.print(table)
+
+
+@app.command("generate-tasks")
+def generate_tasks_cmd(
+    single: int = typer.Option(
+        10, "--single", help="Number of single-object 'move X to Y' tasks"
+    ),
+    two_object: int = typer.Option(
+        5,
+        "--two-object",
+        help="Number of two-object tasks (documented to be hard for RuleBasedPlanner)",
+    ),
+    container: int = typer.Option(
+        5,
+        "--container",
+        help="Number of container tasks (documented to be hard for RuleBasedPlanner)",
+    ),
+    seed: int = typer.Option(0, "--seed", help="Random seed, for reproducible generation"),
+    output: str = typer.Option(
+        "results/synthetic_tasks.yaml", "--output", help="Output YAML path"
+    ),
+) -> None:
+    """Generate synthetic tasks (Step 2: docs/model-improvement-roadmap.md).
+
+    Generates single-object, two-object, and container task variations from
+    templates and saves them in the same YAML schema as sample_tasks.yaml,
+    so they can be loaded with --tasks-file on evaluate/run-task.
+    """
+
+    tasks = generate_tasks(
+        n_single=single, n_two_object=two_object, n_container=container, seed=seed
+    )
+    output_path = save_tasks_to_yaml(tasks, output)
+    console.print(
+        f"Generated {len(tasks)} task(s) "
+        f"({single} single-object, {two_object} two-object, {container} container) "
+        f"-> {output_path}"
+    )
 
 
 @app.command("show-task")

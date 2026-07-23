@@ -211,3 +211,26 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
   allows, to confirm tier 2 (real Gemini) actually solves task_013/014 when
   reached (already independently confirmed in the Phase 4 log above), and
   record the real API-call count saved.
+
+## Step 2 of the model-improvement roadmap: synthetic task augmentation
+
+- **Date:** 2026-07-23
+- **Commit:** (fill in after pushing)
+- **Change:** Added `geniac_cap.tasks.generator` (single-object, two-object,
+  container templates over combinatorial color/shape/location/container
+  pools) and `save_tasks_to_yaml`, exposed via `generate-tasks --single N
+  --two-object N --container N --seed S --output path.yaml`.
+- **Dataset:** 16 generated tasks (8 single-object, 4 two-object, 4
+  container), seed 42, evaluated with RuleBasedPlanner
+- **Result:** success_rate 50.00% (8/16) -- exactly the single-object tasks
+  succeeded (100%), two-object tasks failed with `goal_not_achieved`
+  (100%), container tasks failed with `precondition_failed` (100%).
+- **Interpretation:** the generated tasks reproduce the exact same
+  structural failure pattern as the hand-authored task_013/task_014, at
+  arbitrary scale and zero API cost. This validates the generator's
+  templates are faithful to the real structural limitations, not just
+  superficially similar tasks.
+- **Next action:** use `generate-tasks` with a larger `--two-object` /
+  `--container` count as a bigger benchmark for Step 4 (prompt
+  hill-climbing) and future LLM-vs-RuleBasedPlanner comparisons, so results
+  aren't based on just 2 hand-authored examples.

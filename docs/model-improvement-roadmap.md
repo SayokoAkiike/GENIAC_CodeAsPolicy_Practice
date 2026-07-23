@@ -57,7 +57,8 @@ but it can avoid calling it unnecessarily.
   only be able to check "did this raise an exception," missing failures
   like `goal_not_achieved` (e.g. task_014's two-object case).
 
-### Step 2 — Synthetic task augmentation
+### Step 2 — Synthetic task augmentation ✅ implemented
+
 Programmatically generate additional task variations (new object/location
 name combinations, paraphrase templates) instead of hand-authoring every
 task. Operationalizes "data diversity matters most" at zero API cost,
@@ -65,6 +66,17 @@ though it's honest to note this is structural variation, not genuinely
 novel data — see the caveat below.
 - **Cost:** none (pure Python, no API calls to generate tasks)
 - **Complexity:** low
+- **Implementation:** `geniac_cap.tasks.generator` generates all three
+  patterns already present in `sample_tasks.yaml` (single-object,
+  two-object, container), from combinatorial pools of colors/shapes/
+  locations/containers. `geniac_cap.tasks.loader.save_tasks_to_yaml` saves
+  them in the same schema, loadable via `--tasks-file`. CLI:
+  `generate-tasks --single N --two-object N --container N --seed S
+  --output path.yaml`. Verified: 16 generated tasks (8/4/4 split) evaluated
+  against `RuleBasedPlanner` gave exactly the expected 50% success rate —
+  100% on single-object, 0% (goal_not_achieved) on two-object, 0%
+  (precondition_failed) on container — matching the hand-authored
+  task_001-014 characterization exactly.
 - **Caveat:** increases the *evaluation set's* statistical weight, but
   doesn't teach any planner something new; RuleBasedPlanner's structural
   limits (single-object, no containers) are unaffected

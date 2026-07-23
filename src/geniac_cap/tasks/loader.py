@@ -63,3 +63,22 @@ def get_task_by_id(task_id: str, path: Path | str | None = None) -> TaskDefiniti
         if task.task_id == task_id:
             return task
     raise TaskLoadError(f"No task found with task_id='{task_id}'")
+
+
+def save_tasks_to_yaml(tasks: list[TaskDefinition], path: Path | str) -> Path:
+    """Save ``tasks`` to ``path`` in the same YAML schema as sample_tasks.yaml.
+
+    The inverse of ``load_tasks_from_file``: a round trip through this
+    function and back should reproduce equivalent TaskDefinition objects.
+    Mainly used for synthetic task generation (see tasks/generator.py).
+    """
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    raw = [task.model_dump(mode="json") for task in tasks]
+    path.write_text(
+        yaml.safe_dump(raw, allow_unicode=True, sort_keys=False),
+        encoding="utf-8",
+    )
+    logger.info("Saved %d task(s) to %s", len(tasks), path)
+    return path
