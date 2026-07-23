@@ -121,7 +121,8 @@ data" available here.
   correctly found and kept the `container_reminder` mutation, improving
   task_013 from 0% to 100% success.
 
-### Step 5 — Bandit-based strategy selection
+### Step 5 — Bandit-based strategy selection ✅ implemented
+
 A multi-armed bandit (e.g. epsilon-greedy or UCB) that learns, from
 `ToyRobotEnv`'s free, deterministic reward signal, which planner or repair
 strategy to try first for a given task shape. This is genuine
@@ -129,6 +130,19 @@ reinforcement learning, just applied to a small decision (which strategy,
 not model weights) instead of token-level policy weights.
 - **Cost:** none (learns from local simulation results, not API calls)
 - **Complexity:** medium-high
+- **Implementation:** `geniac_cap.evaluation.bandit.EpsilonGreedyBandit` is
+  a contextual (per-task-difficulty) epsilon-greedy bandit over a set of
+  cascade orders ("arms"); reward is 1.0 on success (with a small per-tier
+  penalty so cheaper cascades win ties), 0.0 on failure.
+  `Evaluator.evaluate_bandit` + `bandit-cascade --arms
+  "rule-based;rule-based,gemini" --epsilon --seed` wire it into the normal
+  evaluation pipeline, reusing `run_single_task_cascade` under the hood.
+- **Verified (fake "smart-llm" tier, see docs/experiment-log.md):** across
+  3 episodes of all 14 tasks, the bandit correctly learned to prefer
+  `rule-based` alone for easy/medium tasks (0 wasted LLM calls) and
+  `rule-based->smart-llm` for hard tasks (0.964 vs 0.5 average reward) --
+  discovering, purely from reward signal, exactly which task difficulty
+  needs the expensive tier.
 - **Honest caveat:** the decision space here is small (a handful of
   planners/strategies), so this is a modest, illustrative RL loop, not a
   demonstration of RL at any meaningful scale

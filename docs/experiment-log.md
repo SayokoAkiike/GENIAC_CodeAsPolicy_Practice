@@ -291,3 +291,39 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
   is available; if `container_reminder` and/or `multi_object_reminder`
   are accepted, review the final prompt and consider merging it into
   `planners/llm_prompts.py`'s `ACTION_PLAN_SYSTEM_PROMPT` default.
+
+## Step 5 of the model-improvement roadmap: contextual bandit for cascade selection
+
+- **Date:** 2026-07-23
+- **Commit:** (fill in after pushing)
+- **Change:** Added `geniac_cap.evaluation.bandit`
+  (`EpsilonGreedyBandit`, `run_bandit_episode`), `Evaluator.evaluate_bandit`,
+  and `bandit-cascade --arms "rule-based;rule-based,gemini" --epsilon
+  --seed`. Learns, per task-difficulty context (easy/medium/hard), which
+  cascade order tends to succeed most efficiently.
+- **Dataset:** all 14 sample tasks, 3 episodes (42 task-runs total), arms
+  `("rule-based",)` vs `("rule-based","smart-llm")`, where `smart-llm` is a
+  fake planner (no real API) that can actually solve the container
+  (task_013) and two-object (task_014) tasks -- simulating a genuinely
+  more capable LLM tier, to demonstrate the bandit learning a real
+  capability gap rather than a coincidence.
+- **Result:** learned best arm per context:
+  - `easy`: `("rule-based",)` -- average reward 1.0 for both arms (ties),
+    correctly settling on the cheaper option
+  - `medium`: `("rule-based",)` -- same as above
+  - `hard`: `("rule-based","smart-llm")` -- average reward 0.964 vs 0.5 for
+    rule-based alone (task_012 is labeled "hard" but rule-based solves it;
+    task_013/014 need the second tier)
+- **Interpretation:** the bandit correctly discovered, purely from
+  ToyRobotEnv's free reward signal, that the LLM tier is only worth its
+  cost for "hard"-labeled tasks -- without being told this in advance. This
+  validates the context-dependent design (vs. a single global "which
+  planner is best" answer) actually captures something a flat cascade
+  order can't: a fixed `rule-based->gemini` cascade already gets this for
+  free by construction, but the bandit's value is in *automatically
+  discovering* which contexts need which strategy, which matters more once
+  more arms/strategies are added.
+- **Next action:** re-run with real `gemini`/`anthropic` as the second
+  tier once quota allows; consider adding a third arm (e.g.
+  `anthropic`-only) to see whether the bandit correctly avoids it if it's
+  costlier/less reliable than the cascade.

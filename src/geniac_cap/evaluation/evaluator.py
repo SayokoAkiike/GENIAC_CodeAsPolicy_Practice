@@ -5,8 +5,10 @@ from __future__ import annotations
 import csv
 import json
 import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from geniac_cap.config import RESULTS_DIR
 from geniac_cap.environment.toy_robot import ToyRobotEnv
@@ -24,6 +26,9 @@ from geniac_cap.perception.base import BasePerception
 from geniac_cap.perception.ground_truth import GroundTruthPerception
 from geniac_cap.planners.base import BasePlanner
 from geniac_cap.utils.logging import get_logger
+
+if TYPE_CHECKING:
+    from geniac_cap.evaluation.bandit import EpsilonGreedyBandit
 
 logger = get_logger(__name__)
 
@@ -228,6 +233,47 @@ class Evaluator:
                 )
             )
         return compute_summary(cascade_label, outcomes)
+
+    def evaluate_bandit(
+        self,
+        tasks: list[TaskDefinition],
+        bandit: EpsilonGreedyBandit,
+        planner_factories: dict[str, Callable[[], BasePlanner]],
+        allow_feedback: bool = True,
+        delay_seconds: float = 0.0,
+        perception: BasePerception | None = None,
+    ) -> EvaluationSummary:
+        """Run every task through a bandit-selected planner cascade (Step 5
+        of docs/model-improvement-roadmap.md): for each task, ``bandit``
+        picks a cascade order based on the task's difficulty, the cascade
+        runs as usual, and the bandit is updated with the observed reward.
+
+        Args:
+            bandit: An ``EpsilonGreedyBandit`` (see evaluation/bandit.py).
+            planner_factories: Maps planner name -> a zero-arg callable that
+                builds a fresh planner instance (fresh instances avoid
+                cross-task state leaking between cascade attempts).
+        """
+
+        # Local import to avoid a circular import (bandit.py imports
+        # run_single_task from this module).
+        from geniac_cap.evaluation.bandit import run_bandit_episode
+
+        outcomes = []
+        for i, task in enumerate(tasks):
+            if i > 0 and delay_seconds > 0:
+                time.sleep(delay_seconds)
+            outcomes.append(
+                run_bandit_episode(
+                    task,
+                    bandit,
+                    planner_factories,
+                    self.executor,
+                    allow_feedback=allow_feedback,
+                    perception=perception,
+                )
+            )
+        return compute_summary("bandit-cascade", outcomes)
 
     def save_results(self, summary: EvaluationSummary) -> tuple[Path, Path]:
         """Save ``summary`` as both JSON and CSV, timestamped, under results_dir.

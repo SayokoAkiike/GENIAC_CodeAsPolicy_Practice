@@ -69,7 +69,10 @@ code generation/execution is left as a documented future extension point
 - **Evaluator**: aggregate metrics saved to both JSON and CSV under
   `results/`; `--cascade "rule-based,gemini"` tries planners in order per
   task, stopping at the first success, so paid/quota-limited planners are
-  only called when a cheaper one fails; `--compare-to <prev.json> --label
+  only called when a cheaper one fails; `bandit-cascade` goes further and
+  *learns*, per task-difficulty context, which cascade order tends to
+  work best, via a contextual epsilon-greedy bandit
+  (`geniac_cap.evaluation.bandit`); `--compare-to <prev.json> --label
   "..."` diffs a run against a saved baseline and prints a row ready to
   paste into the improvement log at the bottom of this README (see
   `docs/model-improvement-roadmap.md`)
@@ -82,7 +85,7 @@ code generation/execution is left as a documented future extension point
   ".[vision]"` for the renderer (Pillow) plus `.[llm]` for the vision API
   call — every other command works without either installed
 - **CLI** (Typer): `demo`, `run-task`, `evaluate`, `list-tasks`, `show-task`
-- **110 pytest tests**, all passing; ruff-clean; GitHub Actions CI
+- **118 pytest tests**, all passing; ruff-clean; GitHub Actions CI
 - **Codespaces-ready** via `.devcontainer/devcontainer.json`
 
 ## Architecture
@@ -115,7 +118,7 @@ geniac-cap-practice/
 │   ├── evaluation/           # Evaluator, metrics
 │   ├── tasks/                 # loader.py, sample_tasks.yaml
 │   └── utils/logging.py
-├── tests/                     # 110 pytest tests
+├── tests/                     # 118 pytest tests
 ├── pyproject.toml
 └── README.md
 ```
@@ -193,6 +196,7 @@ python -m geniac_cap.cli generate-tasks --single 10 --two-object 5 --container 5
 python -m geniac_cap.cli evaluate --planner rule-based --tasks-file results/synthetic_tasks.yaml
 python -m geniac_cap.cli harvest-vocabulary --provider gemini
 python -m geniac_cap.cli hill-climb-prompt --planner gemini --delay-seconds 13
+python -m geniac_cap.cli bandit-cascade --arms "rule-based;rule-based,gemini" --epsilon 0.2
 ```
 
 (If you installed with `pip install -e .`, `geniac-cap ...` also works as a

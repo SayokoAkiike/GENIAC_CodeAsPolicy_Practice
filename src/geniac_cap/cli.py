@@ -16,6 +16,7 @@ from rich.table import Table
 
 from geniac_cap.config import settings
 from geniac_cap.environment.toy_robot import ToyRobotEnv
+from geniac_cap.evaluation.bandit import EpsilonGreedyBandit
 from geniac_cap.evaluation.cascade import run_single_task_cascade
 from geniac_cap.evaluation.evaluator import Evaluator, run_single_task
 from geniac_cap.evaluation.metrics import SummaryLoadError, compare_summaries, load_summary
@@ -429,6 +430,73 @@ def demo() -> None:
     console.print(
         f"\nGoal achieved: {'[green]yes[/green]' if result.goal_achieved else '[red]no[/red]'}"
     )
+
+
+@app.command("bandit-cascade")
+def bandit_cascade(
+    arms: str = typer.Option(
+        "rule-based;rule-based,gemini",
+        "--arms",
+        help=(
+            "Semicolon-separated cascade orders, each comma-separated planner "
+            "names, e.g. 'rule-based;rule-based,gemini;gemini'"
+        ),
+    ),
+    tasks_file: str = typer.Option(
+        None, "--tasks-file", help="Optional path to a custom tasks YAML"
+    ),
+    epsilon: float = typer.Option(0.2, "--epsilon", help="Exploration rate"),
+    seed: int = typer.Option(0, "--seed", help="Random seed, for reproducible runs"),
+    delay_seconds: float = typer.Option(
+        0.0, "--delay-seconds", help="Pause between tasks (see 'evaluate')"
+    ),
+) -> None:
+    """Bandit-based cascade selection (Step 5: docs/model-improvement-roadmap.md).
+
+    Learns, per task-difficulty context, which cascade order (arm) tends to
+    succeed most efficiently, using ToyRobotEnv's free reward signal.
+    Prints the learned best arm per context at the end.
+    """
+
+    arm_specs = [spec.strip() for spec in arms.split(";") if spec.strip()]
+    parsed_arms: list[tuple[str, ...]] = []
+    for spec in arm_specs:
+        names = tuple(name.strip() for name in spec.split(",") if name.strip())
+        for name in names:
+            if name not in _PLANNERS:
+                raise typer.BadParameter(
+                    f"Unknown planner '{name}' in --arms. Choose from: {list(_PLANNERS)}"
+                )
+        parsed_arms.append(names)
+
+    planner_factories = {name: (lambda n=name: _make_planner(n)) for name in _PLANNERS}
+
+    tasks = load_tasks(tasks_file)
+    bandit = EpsilonGreedyBandit(arms=parsed_arms, epsilon=epsilon, seed=seed)
+    evaluator = Evaluator()
+
+    summary = evaluator.evaluate_bandit(
+        tasks, bandit, planner_factories, delay_seconds=delay_seconds
+    )
+    json_path, csv_path = evaluator.save_results(summary)
+
+    table = Table(title="Bandit-cascade evaluation summary")
+    table.add_column("metric")
+    table.add_column("value")
+    table.add_row("total_tasks", str(summary.total_tasks))
+    table.add_row("successful_tasks", str(summary.successful_tasks))
+    table.add_row("success_rate", f"{summary.success_rate:.2%}")
+    table.add_row("average_steps", f"{summary.average_steps:.2f}")
+    console.print(table)
+
+    console.print("\n[bold]Learned best arm per context (task difficulty):[/bold]")
+    for context in ("easy", "medium", "hard"):
+        best = bandit.best_arm(context)
+        if best is not None:
+            console.print(f"  {context}: {'->'.join(best)}")
+
+    console.print(f"\nSaved: {json_path}")
+    console.print(f"Saved: {csv_path}")
 
 
 @app.command("evaluate")
