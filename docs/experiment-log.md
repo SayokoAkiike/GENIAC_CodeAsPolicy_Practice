@@ -328,3 +328,36 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
   tier once quota allows; consider adding a third arm (e.g.
   `anthropic`-only) to see whether the bandit correctly avoids it if it's
   costlier/less reliable than the cascade.
+
+## Created a genuinely hard benchmark (benchmarks/hard_benchmark_v1.yaml)
+
+- **Date:** 2026-07-23
+- **Commit:** (fill in after pushing)
+- **Change:** Realized the original 14-task `sample_tasks.yaml` cannot
+  distinguish "the mechanism works" from "the mechanism actually helped,"
+  because a real Gemini run already solves all 14 tasks -- there was no
+  headroom left. Generated `benchmarks/hard_benchmark_v1.yaml` (60 tasks:
+  20 single-object, 20 two-object, 20 container; `generate-tasks --single
+  20 --two-object 20 --container 20 --seed 100`) and saved it, plus a
+  RuleBasedPlanner baseline result, as tracked (non-gitignored) files
+  under `benchmarks/` specifically so future roadmap verification has a
+  fixed, reusable, genuinely-hard reference point.
+- **Result:** RuleBasedPlanner baseline on the new benchmark: 20/60
+  (33.33%) -- exactly the 20 single-object tasks succeed, all 20
+  two-object tasks fail (`goal_not_achieved`), all 20 container tasks fail
+  (`precondition_failed`). 40/60 tasks (66.7%) are out of reach for
+  RuleBasedPlanner, versus only 2/14 (14.3%) on the original sample set.
+- **Interpretation:** this is the honest fix for a gap identified while
+  reviewing today's "Model improvement log": most of Steps 1/3/4/5 were
+  only validated with fake/mock clients using contrived failure modes
+  (e.g. Step 4's `container_reminder` fix was demonstrated against a
+  simulated bug that has never actually been observed in a real Gemini
+  run). A genuinely hard, larger benchmark is a precondition for any
+  future claim that these techniques measurably improve results, not just
+  that their internal logic is correct.
+- **Next action:** once quota allows, run RuleBasedPlanner, the planner
+  cascade, and (after harvest-vocabulary proposals are reviewed and
+  merged) RuleBasedPlanner again against `benchmarks/hard_benchmark_v1.yaml`
+  with real Anthropic/Gemini calls, using `--compare-to
+  benchmarks/baseline_rule_based_v1.json` each time to get real,
+  comparable deltas for the README's Model improvement log.

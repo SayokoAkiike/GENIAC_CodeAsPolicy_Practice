@@ -158,6 +158,14 @@ not model weights) instead of token-level policy weights.
 - Results at this scale (14-and-growing tasks) are illustrative, not
   statistically rigorous — treat success-rate deltas as directional, not
   as fully independent evidence.
+- **Steps 1, 3, 4, and 5 have only been verified with fake/mock clients so
+  far** (see the README's Model improvement log, 🧪 rows). That confirms
+  the *mechanisms* work, not that they improve results against a real
+  model — the original 14-task `sample_tasks.yaml` turned out to be too
+  easy to prove this either way (a real Gemini run already solves all 14).
+  `benchmarks/hard_benchmark_v1.yaml` (60 tasks, see `benchmarks/README.md`)
+  exists specifically to give real headroom — RuleBasedPlanner solves only
+  20/60 (33%) of it — for the next round of real-API verification.
 
 See the log at the bottom of `README.md` for which of these have actually
 been implemented, when, and what effect was measured.

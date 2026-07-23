@@ -39,7 +39,11 @@ code generation/execution is left as a documented future extension point
   against LLM-backed planners — see `docs/experiment-log.md`. `generate-tasks`
   can programmatically generate more of all three patterns (single-object,
   two-object, container) for larger-scale evaluation — see
-  `docs/model-improvement-roadmap.md`
+  `docs/model-improvement-roadmap.md`. `benchmarks/hard_benchmark_v1.yaml`
+  is a tracked, larger (60-task) version of this used specifically to give
+  real headroom for measuring model-improvement techniques, since the
+  original 14 turned out to be solvable almost entirely by a real Gemini
+  run — see `benchmarks/README.md`
 - **RuleBasedPlanner**: works without any API key; handles English and
   Japanese phrasing variation for move/carry/place-style verbs.
   `harvest-vocabulary` can use an LLM to propose new
@@ -308,7 +312,8 @@ Tracks changes made under <a href="docs/model-improvement-roadmap.md">the zero-b
 | 4 | Prompt hill-climbing (`hill-climb-prompt`) | `968bd30` | 2026-07-23 | N/A — single-task demo only | — | task_013 success 0%→100% after 1 accepted mutation (of 3 tried) | 🧪 |
 | 5 | Contextual bandit (`bandit-cascade`) | `2ba18da` | 2026-07-23 | 12/14 (unchanged) | matches cascade (tier 2 only reached when needed) | learned reward 0.964 (hard tasks, LLM tier) vs 0.5 (hard tasks, rule-based only), per-context | 🧪 |
 | — | **Best real-API result so far** | — | 2026-07-23 | 14/14 (100%) *projected, not yet run as one pass* | not yet measured together | — | ✅ (two separate real runs combined) |
+| — | **Created `benchmarks/hard_benchmark_v1.yaml`** (60 tasks) to fix the "too easy" problem above | — | 2026-07-23 | RuleBasedPlanner: 20/60 (33.33%) | — | — (new measurement ground, not a technique) | ✅ |
 
-**Honest gap:** most rows above (🧪) were validated with fake/mock clients, not real API calls — today's real API testing was spent on Phase 4 and hit Gemini's daily quota before these steps could all be re-verified live. Next concrete action: run `evaluate --cascade "rule-based,gemini" --delay-seconds 13` across all 14 tasks in one pass once quota resets, to replace the projected 100% row with a real, single-run number, and to re-verify Steps 1/3/4/5 against a real model instead of a fake one.
+**Honest gap:** most rows above (🧪) were validated with fake/mock clients, not real API calls — today's real API testing was spent on Phase 4 and hit Gemini's daily quota before these steps could all be re-verified live. The original 14-task set also turned out to be too easy to prove improvement either way (a real Gemini run already solves all 14). Next concrete action: re-run Steps 1/3/4/5 against `benchmarks/hard_benchmark_v1.yaml` (60 tasks, RuleBasedPlanner baseline 33.33%) with a real model once quota resets — that's a task set with genuine room to show whether these techniques actually help.
 
 </details>
