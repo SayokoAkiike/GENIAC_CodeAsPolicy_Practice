@@ -7,10 +7,16 @@ import pytest
 from geniac_cap.environment.toy_robot import ToyRobotEnv
 from geniac_cap.exceptions import PlanningError
 from geniac_cap.execution.executor import SafeExecutor
-from geniac_cap.models import ActionName
+from geniac_cap.models import ActionName, FailureReason
 from geniac_cap.planners.base import PlanningContext
 from geniac_cap.planners.rule_based import RuleBasedPlanner
-from geniac_cap.tasks.loader import load_tasks
+from geniac_cap.tasks.loader import get_task_by_id, load_tasks
+
+# task_013 (container) and task_014 (two objects) are intentionally beyond
+# RuleBasedPlanner's single-object, no-container pattern -- see the tests
+# below and docs/experiment-log.md for why they're useful as a comparison
+# point against LLM-backed planners.
+SINGLE_OBJECT_TASK_IDS = [f"task_{i:03d}" for i in range(1, 13)]
 
 
 def test_rule_based_planner_plans_basic_japanese_task():
@@ -45,10 +51,9 @@ def test_rule_based_planner_raises_planning_error_for_unsupported_instruction():
         RuleBasedPlanner().plan("空を飛んでください", context)
 
 
-@pytest.mark.parametrize("task_index", range(12))
-def test_rule_based_planner_executes_successfully_on_every_sample_task(task_index):
-    tasks = load_tasks()
-    task = tasks[task_index]
+@pytest.mark.parametrize("task_id", SINGLE_OBJECT_TASK_IDS)
+def test_rule_based_planner_executes_successfully_on_every_single_object_task(task_id):
+    task = get_task_by_id(task_id)
     env = ToyRobotEnv.from_task_state(task.initial_state)
     context = PlanningContext(
         objects=env.list_objects(),
@@ -59,3 +64,51 @@ def test_rule_based_planner_executes_successfully_on_every_sample_task(task_inde
     plan = RuleBasedPlanner().plan(task.instruction, context)
     result = SafeExecutor().execute(env, plan, task.goal_state)
     assert result.success is True, f"Task {task.task_id} failed: {result.failure_reason}"
+
+
+def test_all_sample_tasks_are_covered_by_the_id_lists():
+    """Guards against silently forgetting to classify a newly added task."""
+
+    all_ids = {task.task_id for task in load_tasks()}
+    assert all_ids == set(SINGLE_OBJECT_TASK_IDS) | {"task_013", "task_014"}
+
+
+def test_rule_based_planner_cannot_solve_the_container_task():
+    """Documents a known limitation: RuleBasedPlanner never emits open_container,
+    so a task that requires opening a container before placing something inside
+    it fails on a precondition. This is exactly the kind of task an LLM-backed
+    planner (AnthropicPlanner / GeminiPlanner) can be compared against.
+    """
+
+    task = get_task_by_id("task_013")
+    env = ToyRobotEnv.from_task_state(task.initial_state)
+    context = PlanningContext(
+        objects=env.list_objects(),
+        locations=env.list_locations(),
+        object_locations=dict(env.state.object_locations),
+        robot_location=env.state.robot_location,
+    )
+    plan = RuleBasedPlanner().plan(task.instruction, context)
+    result = SafeExecutor().execute(env, plan, task.goal_state)
+    assert result.success is False
+    assert result.failure_reason == FailureReason.PRECONDITION_FAILED
+
+
+def test_rule_based_planner_cannot_solve_the_two_object_task():
+    """Documents a known limitation: RuleBasedPlanner only extracts and moves
+    a single object per instruction, so a task requiring two objects to reach
+    their goal locations only ever moves one of them.
+    """
+
+    task = get_task_by_id("task_014")
+    env = ToyRobotEnv.from_task_state(task.initial_state)
+    context = PlanningContext(
+        objects=env.list_objects(),
+        locations=env.list_locations(),
+        object_locations=dict(env.state.object_locations),
+        robot_location=env.state.robot_location,
+    )
+    plan = RuleBasedPlanner().plan(task.instruction, context)
+    result = SafeExecutor().execute(env, plan, task.goal_state)
+    assert result.success is False
+    assert result.failure_reason == FailureReason.GOAL_NOT_ACHIEVED

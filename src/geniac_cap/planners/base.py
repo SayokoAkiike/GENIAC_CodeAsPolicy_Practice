@@ -1,13 +1,12 @@
 """Planner abstraction.
 
-Every planner (rule-based today; OpenAI/Anthropic/local-model planners in the
-future) implements the same ``BasePlanner`` interface, so the rest of the
-pipeline (Executor, Evaluator, CLI) never needs to know which kind of planner
-produced a given ActionPlan.
+Every planner (rule-based, Anthropic, Gemini today; OpenAI/local-model
+planners in the future) implements the same ``BasePlanner`` interface, so
+the rest of the pipeline (Executor, Evaluator, CLI) never needs to know
+which kind of planner produced a given ActionPlan.
 
 Future extension points (not implemented yet, intentionally):
   * OpenAIPlanner(BasePlanner)   -- would call the OpenAI API
-  * AnthropicPlanner(BasePlanner) -- would call the Anthropic API
   * LocalModelPlanner(BasePlanner) -- would call a locally hosted model
 These can be added without changing PlanningContext, ActionPlan, or the
 Executor, as long as they return a valid ActionPlan.
@@ -41,6 +40,11 @@ class BasePlanner(ABC):
 
     name: str = "base"
 
+    #: Whether this planner supports single-retry feedback-driven replanning
+    #: (see ``replan``). The Evaluator checks this attribute -- not the
+    #: planner's concrete type -- so any planner can opt in.
+    supports_feedback: bool = False
+
     @abstractmethod
     def plan(self, instruction: str, context: PlanningContext) -> ActionPlan:
         """Turn a natural-language instruction into an ActionPlan.
@@ -50,3 +54,16 @@ class BasePlanner(ABC):
         """
 
         raise NotImplementedError
+
+    def replan(self, instruction: str, context: PlanningContext, feedback: str) -> ActionPlan:
+        """Produce a corrected plan after a failed execution attempt.
+
+        Only called by the Evaluator when ``supports_feedback`` is True and
+        the first attempt failed. ``feedback`` is a short, structured
+        description of why the previous plan failed (see
+        ``evaluation.evaluator._build_failure_feedback``). The default
+        implementation raises NotImplementedError; planners that opt in via
+        ``supports_feedback = True`` must override this.
+        """
+
+        raise NotImplementedError(f"{type(self).__name__} does not implement replan()")

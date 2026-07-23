@@ -196,3 +196,42 @@
   category: healthcare
   expected_objects: [towel]
   expected_locations: [bathroom, bedside]
+
+# --- Harder tasks below: these are designed to be beyond RuleBasedPlanner's
+# single-object, no-containers "move X to Y" pattern, so they're a good
+# place to compare it against LLM-backed planners (see docs/experiment-log.md).
+
+- task_id: task_013
+  instruction: "供給ボックスを開けて、書類を中に入れてください"
+  initial_state:
+    robot_location: office
+    object_locations:
+      documents: office
+    locations: [office, supply_box]
+    objects: [documents]
+    containers: [supply_box]
+  goal_state:
+    object_locations:
+      documents: supply_box
+  difficulty: hard
+  category: office
+  expected_objects: [documents]
+  expected_locations: [office, supply_box]
+
+- task_id: task_014
+  instruction: "赤いブロックと緑のブロックを両方青い棚に置いてください"
+  initial_state:
+    robot_location: table
+    object_locations:
+      red_block: table
+      green_block: table
+    locations: [table, blue_shelf]
+    objects: [red_block, green_block]
+  goal_state:
+    object_locations:
+      red_block: blue_shelf
+      green_block: blue_shelf
+  difficulty: hard
+  category: household
+  expected_objects: [red_block, green_block]
+  expected_locations: [table, blue_shelf]

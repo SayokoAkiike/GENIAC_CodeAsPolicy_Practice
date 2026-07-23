@@ -40,6 +40,24 @@ class _FakeClient:
         self.models = _FakeModels(response_text)
 
 
+class _SequentialFakeModels:
+    """Returns a different canned response on each successive call."""
+
+    def __init__(self, response_texts: list[str]) -> None:
+        self._responses = list(response_texts)
+        self.calls: list[dict] = []
+
+    def generate_content(self, **kwargs):
+        self.calls.append(kwargs)
+        text = self._responses[min(len(self.calls) - 1, len(self._responses) - 1)]
+        return _FakeResponse(text=text)
+
+
+class _SequentialFakeClient:
+    def __init__(self, response_texts: list[str]) -> None:
+        self.models = _SequentialFakeModels(response_texts)
+
+
 def _context() -> PlanningContext:
     return PlanningContext(
         objects=["cup"],
@@ -108,3 +126,32 @@ def test_gemini_planner_works_end_to_end_via_run_single_task():
     outcome = run_single_task(task, planner, SafeExecutor(), allow_feedback=False)
     assert outcome.success is True
     assert outcome.planner_name == "gemini"
+
+
+def test_gemini_planner_supports_feedback_and_replans_on_failure():
+    broken_plan = json.dumps(
+        [
+            {"action": "pick", "args": {"object_name": "red_block"}},
+            {"action": "place", "args": {"target_location": "blue_shelf"}},
+        ]
+    )
+    fixed_plan = json.dumps(
+        [
+            {"action": "move_to", "args": {"location": "table"}},
+            {"action": "pick", "args": {"object_name": "red_block"}},
+            {"action": "move_to", "args": {"location": "blue_shelf"}},
+            {"action": "place", "args": {"target_location": "blue_shelf"}},
+        ]
+    )
+    task = get_task_by_id("task_001")
+    planner = GeminiPlanner(client=_SequentialFakeClient([broken_plan, fixed_plan]))
+
+    assert planner.supports_feedback is True
+
+    outcome = run_single_task(task, planner, SafeExecutor(), allow_feedback=True)
+
+    assert outcome.success is True
+    assert outcome.replanned is True
+    assert len(planner._client.models.calls) == 2
+    second_call_prompt = planner._client.models.calls[1]["contents"]
+    assert "previous_attempt_failed_because" in second_call_prompt

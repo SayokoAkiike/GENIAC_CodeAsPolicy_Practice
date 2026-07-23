@@ -107,3 +107,42 @@ def test_list_objects_and_locations():
     env = make_env()
     assert env.list_objects() == ["cup"]
     assert env.list_locations() == ["shelf", "table"]
+
+
+def make_env_with_container() -> ToyRobotEnv:
+    return ToyRobotEnv(
+        locations={"office", "supply_box"},
+        objects={"documents"},
+        object_locations={"documents": "office"},
+        robot_location="office",
+        containers={"supply_box"},
+    )
+
+
+def test_place_into_closed_container_fails():
+    env = make_env_with_container()
+    env.pick("documents")
+    env.move_to("supply_box")
+    with pytest.raises(PreconditionFailedError):
+        env.place("supply_box")
+
+
+def test_place_into_open_container_succeeds():
+    env = make_env_with_container()
+    env.pick("documents")
+    env.move_to("supply_box")
+    env.open_container("supply_box")
+    env.place("supply_box")
+    assert env.state.object_locations["documents"] == "supply_box"
+
+
+def test_pick_from_closed_container_fails():
+    env = ToyRobotEnv(
+        locations={"supply_box"},
+        objects={"documents"},
+        object_locations={"documents": "supply_box"},
+        robot_location="supply_box",
+        containers={"supply_box"},
+    )
+    with pytest.raises(PreconditionFailedError):
+        env.pick("documents")

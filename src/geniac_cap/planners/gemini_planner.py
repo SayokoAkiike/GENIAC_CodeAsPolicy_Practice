@@ -40,6 +40,7 @@ class GeminiPlanner(BasePlanner):
     """Planner that delegates plan generation to a Gemini model."""
 
     name = "gemini"
+    supports_feedback = True
 
     def __init__(
         self,
@@ -82,8 +83,18 @@ class GeminiPlanner(BasePlanner):
         return self._client
 
     def plan(self, instruction: str, context: PlanningContext) -> ActionPlan:
+        return self._generate(instruction, context, feedback=None)
+
+    def replan(self, instruction: str, context: PlanningContext, feedback: str) -> ActionPlan:
+        """Ask the model for a corrected plan, given feedback on why the first one failed."""
+
+        return self._generate(instruction, context, feedback=feedback)
+
+    def _generate(
+        self, instruction: str, context: PlanningContext, feedback: str | None
+    ) -> ActionPlan:
         client = self._get_client()
-        user_prompt = self._build_user_prompt(instruction, context)
+        user_prompt = self._build_user_prompt(instruction, context, feedback)
 
         logger.info("GeminiPlanner calling model '%s' for: '%s'", self._model, instruction)
         try:
@@ -110,7 +121,9 @@ class GeminiPlanner(BasePlanner):
         return plan
 
     @staticmethod
-    def _build_user_prompt(instruction: str, context: PlanningContext) -> str:
+    def _build_user_prompt(
+        instruction: str, context: PlanningContext, feedback: str | None = None
+    ) -> str:
         payload = {
             "instruction": instruction,
             "known_objects": context.objects,
@@ -118,6 +131,9 @@ class GeminiPlanner(BasePlanner):
             "object_locations": context.object_locations,
             "robot_location": context.robot_location,
         }
+        if feedback:
+            payload["previous_attempt_failed_because"] = feedback
+            payload["note"] = "Produce a corrected plan that avoids this failure."
         return json.dumps(payload, ensure_ascii=False)
 
     @staticmethod

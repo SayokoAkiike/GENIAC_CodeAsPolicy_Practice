@@ -21,17 +21,27 @@ one capability on top of a working, tested foundation.
   Google's free tier (`GEMINI_API_KEY`, no credit card required); both LLM
   planners share one prompt (`planners/llm_prompts.py`) for a fair comparison
 - [ ] Implement `OpenAIPlanner` / `LocalModelPlanner` the same way
-- [ ] Compare LLM planner vs. `RuleBasedPlanner` success rate on the same
-  tasks and log it in `docs/experiment-log.md`
-- [ ] Consider whether `AnthropicPlanner` also needs its own
-  execution-feedback repair path (today only `FeedbackPlanner` supports the
-  single-retry loop)
+- [x] Compared GeminiPlanner vs. RuleBasedPlanner on the 12 single-object
+  tasks (both 100%, Gemini used fewer average steps by skipping redundant
+  moves) — logged in `docs/experiment-log.md`. Two additional "hard" tasks
+  (`task_013`, `task_014`) were added specifically to give LLM planners
+  room to show an edge RuleBasedPlanner structurally cannot reach; not yet
+  run against a real LLM planner.
+- [x] `AnthropicPlanner` and `GeminiPlanner` now support the same
+  single-retry execution-feedback loop as `FeedbackPlanner`, via the
+  generic `BasePlanner.supports_feedback` / `replan()` interface (see
+  Phase 3)
 
 ## Phase 3 — Execution feedback and self-correction
 
-- Extend the current single-retry `FeedbackPlanner` into a multi-turn loop
-  with a configurable retry budget
-- Track *why* retries succeed or fail, not just whether they did
+- [x] Generalized the single-retry feedback loop: `BasePlanner` exposes
+  `supports_feedback` and an optional `replan(instruction, context,
+  feedback)` method; the Evaluator calls it for *any* planner that opts in
+  (not just `FeedbackPlanner`), passing a structured description of why the
+  first attempt failed (`evaluation.evaluator._build_failure_feedback`)
+- [ ] Extend beyond a single retry into a multi-turn loop with a
+  configurable retry budget
+- [ ] Track *why* retries succeed or fail, not just whether they did
 
 ## Phase 4 — Vision or scene representation
 

@@ -21,7 +21,6 @@ from geniac_cap.models import (
     TaskOutcome,
 )
 from geniac_cap.planners.base import BasePlanner, PlanningContext
-from geniac_cap.planners.feedback import FeedbackPlanner
 from geniac_cap.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -36,6 +35,34 @@ def _build_context(env: ToyRobotEnv) -> PlanningContext:
     )
 
 
+def _build_failure_feedback(result: ExecutionResult) -> str:
+    """Build a short, structured description of why a plan's execution failed.
+
+    Used as the ``feedback`` argument to ``BasePlanner.replan()``. Generic
+    across planner types: describes the failing step (if any) and the
+    resulting environment state, in the same spirit as the worked example in
+    the project spec ("Object red_block is at table. Robot is at kitchen.").
+    """
+
+    failed_step = next((log for log in result.logs if not log.success), None)
+    parts = []
+    if failed_step is not None:
+        parts.append(
+            f"Step '{failed_step.action}' with args {failed_step.args} failed: "
+            f"{failed_step.message}"
+        )
+    elif result.failure_reason is not None:
+        parts.append(f"Plan failed: {result.failure_reason.value}")
+    state = result.final_state
+    if state:
+        parts.append(
+            f"Current state: robot_location={state.get('robot_location')}, "
+            f"held_object={state.get('held_object')}, "
+            f"object_locations={state.get('object_locations')}"
+        )
+    return " ".join(parts) if parts else "Execution failed for an unknown reason."
+
+
 def run_single_task(
     task: TaskDefinition,
     planner: BasePlanner,
@@ -44,9 +71,9 @@ def run_single_task(
 ) -> TaskOutcome:
     """Run one task through ``planner`` + ``executor`` and return its outcome.
 
-    If ``planner`` is a FeedbackPlanner, execution fails, and ``allow_feedback``
-    is True, the environment is reset and exactly one replanning attempt is
-    made using the planner's ``replan`` method.
+    If ``planner.supports_feedback`` is True, execution fails, and
+    ``allow_feedback`` is True, the environment is reset and exactly one
+    replanning attempt is made using the planner's ``replan`` method.
     """
 
     env = ToyRobotEnv.from_task_state(task.initial_state)
@@ -71,11 +98,12 @@ def run_single_task(
 
     result: ExecutionResult = executor.execute(env, plan, task.goal_state)
 
-    if not result.success and allow_feedback and isinstance(planner, FeedbackPlanner):
+    if not result.success and allow_feedback and getattr(planner, "supports_feedback", False):
         logger.info("Task %s failed; attempting one feedback-driven replan", task.task_id)
         env.reset()
+        feedback_text = _build_failure_feedback(result)
         try:
-            repaired_plan = planner.replan(task.instruction, context)
+            repaired_plan = planner.replan(task.instruction, context, feedback_text)
             result = executor.execute(env, repaired_plan, task.goal_state)
             result.replanned = True
         except PlanningError as exc:

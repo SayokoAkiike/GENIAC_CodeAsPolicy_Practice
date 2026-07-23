@@ -59,11 +59,12 @@ class FeedbackPlanner(BasePlanner):
     """Planner that starts naive and repairs its own plan once, given feedback.
 
     ``plan()`` alone returns the naive (likely-to-fail) plan, matching the
-    BasePlanner interface. The orchestrator should call ``replan()`` after a
-    failed execution to get the corrected, full plan.
+    BasePlanner interface. The Evaluator calls ``replan()`` after a failed
+    execution to get the corrected, full plan.
     """
 
     name = "feedback"
+    supports_feedback = True
 
     def __init__(self) -> None:
         self._naive = NaivePlanner()
@@ -72,12 +73,17 @@ class FeedbackPlanner(BasePlanner):
     def plan(self, instruction: str, context: PlanningContext) -> ActionPlan:
         return self._naive.plan(instruction, context)
 
-    def replan(self, instruction: str, context: PlanningContext) -> ActionPlan:
+    def replan(self, instruction: str, context: PlanningContext, feedback: str) -> ActionPlan:
         """Return a corrected plan that inserts the missing move_to steps.
 
         Reuses RuleBasedPlanner, which already knows how to build a full
-        move -> pick -> move -> place sequence from the same context.
+        move -> pick -> move -> place sequence from the same context. The
+        ``feedback`` text isn't needed here (the fix is derivable directly
+        from ``context``) but is accepted for interface consistency with
+        other planners (e.g. AnthropicPlanner, GeminiPlanner) that do use it.
         """
 
-        logger.info("FeedbackPlanner repairing plan for: '%s'", instruction)
+        logger.info(
+            "FeedbackPlanner repairing plan for: '%s' (feedback: %s)", instruction, feedback
+        )
         return self._corrective.plan(instruction, context)

@@ -130,6 +130,8 @@ class ToyRobotEnv:
           * The object must exist.
           * The robot must not already be holding something.
           * The robot must be at the same location as the object.
+          * If the object's current location is a container, that container
+            must be open.
         """
 
         self._require_object(object_name)
@@ -142,6 +144,11 @@ class ToyRobotEnv:
             raise PreconditionFailedError(
                 f"Cannot pick '{object_name}': robot is at '{self.state.robot_location}' "
                 f"but object is at '{object_loc}'"
+            )
+        if object_loc in self._containers and not self.state.container_open.get(object_loc, False):
+            raise PreconditionFailedError(
+                f"Cannot pick '{object_name}': container '{object_loc}' is closed. "
+                "Open it first with open_container."
             )
         self.state.held_object = object_name
         msg = f"Robot picked up '{object_name}'"
@@ -156,11 +163,19 @@ class ToyRobotEnv:
           * The robot must currently hold an object.
           * The target location must exist.
           * The robot must be at target_location (moved there first).
+          * If target_location is a container, it must be open.
         """
 
         self._require_location(target_location)
         if self.state.held_object is None:
             raise PreconditionFailedError("Cannot place: robot is not holding any object")
+        if target_location in self._containers and not self.state.container_open.get(
+            target_location, False
+        ):
+            raise PreconditionFailedError(
+                f"Cannot place into container '{target_location}': it is closed. "
+                "Open it first with open_container."
+            )
         if self.state.robot_location != target_location:
             raise PreconditionFailedError(
                 f"Cannot place at '{target_location}': robot is at '{self.state.robot_location}'"

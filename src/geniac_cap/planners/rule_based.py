@@ -51,6 +51,7 @@ OBJECT_SYNONYMS: dict[str, list[str]] = {
     "book": ["本"],
     "plate": ["皿", "お皿"],
     "notebook": ["ノート"],
+    "documents": ["書類", "ドキュメント"],
 }
 
 # location_name -> extra Japanese surface forms.
@@ -69,6 +70,7 @@ LOCATION_SYNONYMS: dict[str, list[str]] = {
     "red_box": ["赤い箱", "赤箱"],
     "office": ["オフィス", "事務室"],
     "bathroom": ["浴室", "お風呂場"],
+    "supply_box": ["供給ボックス", "収納ボックス"],
 }
 
 

@@ -36,9 +36,12 @@ code generation/execution is left as a documented future extension point
   container open/close, action history, precondition checks
   (`move_to`, `pick`, `place`, `inspect`, `wait`, `reset`,
   `open_container`, `close_container`)
-- **12 sample tasks** in YAML, including household, kitchen, office, and
+- **14 sample tasks** in YAML, including household, kitchen, office, and
   healthcare-adjacent tasks (object transport / tidying only — no
-  medication or clinical actions)
+  medication or clinical actions). Twelve are solvable by
+  `RuleBasedPlanner`; two (`task_013`, a container task, and `task_014`, a
+  two-object task) are intentionally beyond it, as a comparison point
+  against LLM-backed planners — see `docs/experiment-log.md`
 - **RuleBasedPlanner**: works without any API key; handles Japanese and
   simple English phrasing variation ("運ぶ/置く/移動する/移す" /
   "move/carry/place/put")
@@ -56,11 +59,14 @@ code generation/execution is left as a documented future extension point
   limit, structured failure reasons, per-step logging
 - **FeedbackPlanner**: a single-retry execution-feedback loop, with a
   `NaivePlanner` used to demonstrate the difference between "with feedback"
-  and "without feedback" success rates
+  and "without feedback" success rates. `AnthropicPlanner` and
+  `GeminiPlanner` support the same feedback loop (`supports_feedback`), so
+  a failed plan is retried once with the failure reason included in the
+  follow-up prompt
 - **Evaluator**: aggregate metrics saved to both JSON and CSV under
   `results/`
 - **CLI** (Typer): `demo`, `run-task`, `evaluate`, `list-tasks`, `show-task`
-- **43 pytest tests**, all passing; ruff-clean; GitHub Actions CI
+- **64 pytest tests**, all passing; ruff-clean; GitHub Actions CI
 - **Codespaces-ready** via `.devcontainer/devcontainer.json`
 
 ## Architecture
@@ -92,7 +98,7 @@ geniac-cap-practice/
 │   ├── evaluation/           # Evaluator, metrics
 │   ├── tasks/                 # loader.py, sample_tasks.yaml
 │   └── utils/logging.py
-├── tests/                     # 43 pytest tests
+├── tests/                     # 64 pytest tests
 ├── pyproject.toml
 └── README.md
 ```
@@ -204,9 +210,13 @@ python -m pytest
 pytest
 ```
 
-43 tests cover the environment, executor whitelist/validation, planner
-behavior (including all 12 sample tasks), the feedback/replanning loop, the
-evaluator's metrics and JSON/CSV output, and the task loader.
+64 tests cover the environment (including container open/close
+preconditions), executor whitelist/validation, planner behavior (all 12
+single-object sample tasks, plus dedicated tests documenting why
+RuleBasedPlanner can't solve the 2 harder ones), the feedback/replanning
+loop (now shared by RuleBasedPlanner-based `FeedbackPlanner` and the LLM
+planners), the evaluator's metrics and JSON/CSV output, and the task
+loader.
 
 ## Current constraints
 
