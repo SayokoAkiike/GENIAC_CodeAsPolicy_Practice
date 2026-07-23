@@ -6,8 +6,11 @@ package and run ``geniac-cap --help``.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.table import Table
 
 from geniac_cap.config import settings
@@ -15,6 +18,10 @@ from geniac_cap.environment.toy_robot import ToyRobotEnv
 from geniac_cap.evaluation.evaluator import Evaluator, run_single_task
 from geniac_cap.exceptions import GeniacCapError
 from geniac_cap.execution.executor import SafeExecutor
+from geniac_cap.perception.base import BasePerception
+from geniac_cap.perception.ground_truth import GroundTruthPerception
+from geniac_cap.perception.renderer import render_scene
+from geniac_cap.perception.vlm_perception import VLMPerception
 from geniac_cap.planners.anthropic_planner import AnthropicPlanner
 from geniac_cap.planners.base import BasePlanner, PlanningContext
 from geniac_cap.planners.feedback import FeedbackPlanner
@@ -41,6 +48,14 @@ def _make_planner(name: str) -> BasePlanner:
     if name not in _PLANNERS:
         raise typer.BadParameter(f"Unknown planner '{name}'. Choose from: {list(_PLANNERS)}")
     return _PLANNERS[name]()  # type: ignore[misc]
+
+
+def _make_perception(name: str, vision_provider: str) -> BasePerception:
+    if name == "ground-truth":
+        return GroundTruthPerception()
+    if name == "vlm":
+        return VLMPerception(provider=vision_provider)
+    raise typer.BadParameter(f"Unknown perception '{name}'. Choose from: ground-truth, vlm")
 
 
 @app.callback()
@@ -74,32 +89,71 @@ def show_task(task_id: str = typer.Option(..., "--task-id")) -> None:
     try:
         task = get_task_by_id(task_id)
     except GeniacCapError as exc:
-        console.print(f"[red]Error:[/red] {exc}")
+        console.print(f"[red]Error:[/red] {escape(str(exc))}")
         raise typer.Exit(code=1) from exc
     console.print_json(data=task.model_dump(mode="json"))
+
+
+@app.command("render-scene")
+def render_scene_cmd(
+    task_id: str = typer.Option(..., "--task-id"),
+    output: str = typer.Option(
+        None, "--output", help="Output PNG path (default: results/<task_id>_scene.png)"
+    ),
+) -> None:
+    """Render a task's initial state as a PNG (Phase 4: VLM perception).
+
+    Requires the 'vision' extra: pip install -e ".[vision]"
+    """
+
+    try:
+        task = get_task_by_id(task_id)
+    except GeniacCapError as exc:
+        console.print(f"[red]Error:[/red] {escape(str(exc))}")
+        raise typer.Exit(code=1) from exc
+
+    env = ToyRobotEnv.from_task_state(task.initial_state)
+    try:
+        png_bytes = render_scene(env)
+    except GeniacCapError as exc:
+        console.print(f"[red]Error:[/red] {escape(str(exc))}")
+        raise typer.Exit(code=1) from exc
+
+    output_path = Path(output) if output else Path("results") / f"{task.task_id}_scene.png"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_bytes(png_bytes)
+    console.print(f"Saved scene render to: {output_path}")
 
 
 @app.command("run-task")
 def run_task(
     task_id: str = typer.Option(..., "--task-id"),
     planner: str = typer.Option("rule-based", "--planner", help=f"One of: {list(_PLANNERS)}"),
+    perception: str = typer.Option(
+        "ground-truth", "--perception", help="One of: ground-truth, vlm"
+    ),
+    vision_provider: str = typer.Option(
+        "anthropic", "--vision-provider", help="Used when --perception vlm: anthropic or gemini"
+    ),
 ) -> None:
     """Run a single task with the chosen planner and print the outcome."""
 
     try:
         task = get_task_by_id(task_id)
     except GeniacCapError as exc:
-        console.print(f"[red]Error:[/red] {exc}")
+        console.print(f"[red]Error:[/red] {escape(str(exc))}")
         raise typer.Exit(code=1) from exc
 
     planner_obj = _make_planner(planner)
+    perception_obj = _make_perception(perception, vision_provider)
     executor = SafeExecutor()
-    outcome = run_single_task(task, planner_obj, executor)
+    outcome = run_single_task(task, planner_obj, executor, perception=perception_obj)
 
     status = "[green]SUCCESS[/green]" if outcome.success else "[red]FAILED[/red]"
     console.print(f"Task [bold]{task.task_id}[/bold]: {status}")
     console.print(f"  instruction: {task.instruction}")
     console.print(f"  planner: {outcome.planner_name}")
+    console.print(f"  perception: {perception_obj.name}")
     console.print(f"  steps: {outcome.steps}")
     console.print(f"  replanned: {outcome.replanned}")
     if outcome.failure_reason:
@@ -162,19 +216,33 @@ def evaluate(
             "(5 requests/minute) from hitting 429s across all 12 tasks."
         ),
     ),
+    perception: str = typer.Option(
+        "ground-truth", "--perception", help="One of: ground-truth, vlm"
+    ),
+    vision_provider: str = typer.Option(
+        "anthropic", "--vision-provider", help="Used when --perception vlm: anthropic or gemini"
+    ),
 ) -> None:
     """Evaluate a planner across all sample tasks and save JSON/CSV results."""
 
     tasks = load_tasks(tasks_file)
     planner_obj = _make_planner(planner)
+    perception_obj = _make_perception(perception, vision_provider)
     evaluator = Evaluator()
 
     summary = evaluator.evaluate(
-        tasks, planner_obj, allow_feedback=not no_feedback, delay_seconds=delay_seconds
+        tasks,
+        planner_obj,
+        allow_feedback=not no_feedback,
+        delay_seconds=delay_seconds,
+        perception=perception_obj,
     )
     json_path, csv_path = evaluator.save_results(summary)
 
-    table = Table(title=f"Evaluation summary — planner: {summary.planner_name}")
+    table = Table(
+        title=f"Evaluation summary — planner: {summary.planner_name} "
+        f"(perception: {perception_obj.name})"
+    )
     table.add_column("metric")
     table.add_column("value")
     table.add_row("total_tasks", str(summary.total_tasks))

@@ -45,10 +45,21 @@ one capability on top of a working, tested foundation.
 
 ## Phase 4 — Vision or scene representation
 
-- Add a VLM-based perception interface that produces the same
-  `PlanningContext` shape the planners already consume, so planners do not
-  need to change
-- Explore a simple synthetic "scene description" before wiring in a real VLM
+- [x] Added a `BasePerception` interface producing the same
+  `PlanningContext` shape planners already consume, so planners never need
+  to change: `GroundTruthPerception` (default, reads state directly) and
+  `VLMPerception` (renders the scene as a PNG via `perception/renderer.py`
+  and asks Claude or Gemini's vision capability to describe it)
+- [x] `--perception ground-truth|vlm` and `--vision-provider
+  anthropic|gemini` added to `run-task` / `evaluate`; a `render-scene`
+  CLI command saves a task's rendered scene as a PNG (gated behind the
+  optional `vision` extra: `pip install -e ".[vision]"`)
+- [ ] Compare GroundTruthPerception vs. VLMPerception success rate on the
+  same tasks (does reading a rendered image instead of exact state change
+  which tasks succeed?) and log it in `docs/experiment-log.md`
+- [ ] Explore a richer synthetic scene representation (e.g. simple 2D
+  sprites/icons instead of text-labeled boxes) if plain boxes turn out to
+  be too easy for the VLM to read perfectly
 
 ## Phase 5 — CaP-X or robotics simulator integration
 

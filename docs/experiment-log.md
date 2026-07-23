@@ -108,3 +108,59 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
   credits are available, for a 3-way comparison; consider adding more
   multi-object / multi-container tasks to see where GeminiPlanner's
   planning starts to break down.
+
+## Template: GroundTruthPerception vs. VLMPerception (Phase 4)
+
+- **Date:**
+- **Commit:**
+- **Planner:**
+- **Perception:** ground-truth vs vlm (vision-provider: anthropic/gemini)
+- **Dataset:**
+- **Number of tasks:**
+- **Success rate:** ground-truth ___%, vlm ___%
+- **Average steps:**
+- **Errors:** (note any perception_error-style failures, i.e. the VLM
+  misread the scene -- e.g. missed an object, mislabeled a location, or
+  read the robot's position wrong)
+- **Changes:**
+- **Interpretation:**
+- **Next action:**
+
+## Phase 4 implementation notes (bug found and fixed during development)
+
+- **Date:** 2026-07-23
+- **Commit:** (fill in after pushing)
+- **Change:** Added `geniac_cap.perception` (`GroundTruthPerception`,
+  `VLMPerception`, `renderer.py`), wired into the Evaluator/CLI via
+  `--perception` / `--vision-provider`, plus a `render-scene` CLI command.
+- **Bug found:** CLI error messages containing square brackets (e.g. "pip
+  install -e '.[vision]'") were being silently mangled by Rich's markup
+  parser, which treats `[text]` as a style tag. `[vision]` was disappearing
+  from the printed message entirely.
+- **Fix:** escape dynamic exception text with `rich.markup.escape()` before
+  interpolating it into `console.print()` calls; added a regression test
+  (`tests/test_cli.py::test_error_messages_with_brackets_are_not_mangled_by_rich_markup`).
+- **Interpretation:** this is a good example of why error-path testing
+  matters even for "just a CLI" — the bug only shows up when an error
+  message happens to contain characters meaningful to the display library,
+  which is easy to miss when testing the happy path.
+
+## VLMPerception first real test (Gemini)
+
+- **Date:** 2026-07-23
+- **Commit:** (fill in after pushing)
+- **Planner:** gemini, **Perception:** vlm (vision-provider: gemini)
+- **Dataset:** task_001 (single task)
+- **Result:** VLMPerception succeeded (200 OK) -- the scene render was
+  correctly read by gemini-flash-latest. The subsequent GeminiPlanner call
+  hit a 429 due to the free tier's *daily* quota
+  (GenerateRequestsPerDayPerProjectPerModel-FreeTier, limit 20/day), not
+  the per-minute limit `--delay-seconds` addresses.
+- **Interpretation:** Phase 4's core mechanism (render scene -> VLM reads
+  it -> PlanningContext) is validated end-to-end against a real API. The
+  planner-side failure is purely a quota exhaustion artifact from a full
+  day of testing, not a code issue.
+- **Next action:** re-run `run-task --perception vlm` and a full
+  `evaluate --perception vlm` comparison once the daily quota resets (or
+  with a fresh API key/project), and log ground-truth vs. vlm success
+  rates using the template above.

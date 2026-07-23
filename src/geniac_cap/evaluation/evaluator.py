@@ -20,19 +20,14 @@ from geniac_cap.models import (
     TaskDefinition,
     TaskOutcome,
 )
-from geniac_cap.planners.base import BasePlanner, PlanningContext
+from geniac_cap.perception.base import BasePerception
+from geniac_cap.perception.ground_truth import GroundTruthPerception
+from geniac_cap.planners.base import BasePlanner
 from geniac_cap.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-
-def _build_context(env: ToyRobotEnv) -> PlanningContext:
-    return PlanningContext(
-        objects=env.list_objects(),
-        locations=env.list_locations(),
-        object_locations=dict(env.state.object_locations),
-        robot_location=env.state.robot_location,
-    )
+_DEFAULT_PERCEPTION = GroundTruthPerception()
 
 
 def _build_failure_feedback(result: ExecutionResult) -> str:
@@ -68,18 +63,40 @@ def run_single_task(
     planner: BasePlanner,
     executor: SafeExecutor,
     allow_feedback: bool = True,
+    perception: BasePerception | None = None,
 ) -> TaskOutcome:
     """Run one task through ``planner`` + ``executor`` and return its outcome.
 
     If ``planner.supports_feedback`` is True, execution fails, and
     ``allow_feedback`` is True, the environment is reset and exactly one
     replanning attempt is made using the planner's ``replan`` method.
+
+    Args:
+        perception: How to build the PlanningContext from the environment.
+            Defaults to ``GroundTruthPerception`` (reads state directly).
+            Pass a ``VLMPerception`` to have a vision model read a rendered
+            image of the scene instead (see docs/roadmap.md, Phase 4).
     """
 
+    perception = perception or _DEFAULT_PERCEPTION
     env = ToyRobotEnv.from_task_state(task.initial_state)
-    context = _build_context(env)
 
     logger.info("Starting task %s: '%s'", task.task_id, task.instruction)
+
+    try:
+        context = perception.perceive(env)
+    except PlanningError as exc:
+        logger.warning("Perception failed for task %s: %s", task.task_id, exc)
+        return TaskOutcome(
+            task_id=task.task_id,
+            instruction=task.instruction,
+            planner_name=planner.name,
+            success=False,
+            steps=0,
+            execution_time_seconds=0.0,
+            failure_reason=FailureReason.PLANNING_ERROR,
+            replanned=False,
+        )
 
     try:
         plan = planner.plan(task.instruction, context)
@@ -144,6 +161,7 @@ class Evaluator:
         planner: BasePlanner,
         allow_feedback: bool = True,
         delay_seconds: float = 0.0,
+        perception: BasePerception | None = None,
     ) -> EvaluationSummary:
         """Run every task in ``tasks`` and return an aggregated EvaluationSummary.
 
@@ -152,6 +170,10 @@ class Evaluator:
                 rate-limited free-tier LLM APIs (e.g. Gemini's free tier
                 allows only a few requests per minute) so a full run doesn't
                 immediately trigger 429 errors on later tasks.
+            perception: How to build each task's PlanningContext. Defaults
+                to ``GroundTruthPerception``; pass a ``VLMPerception`` to
+                have a vision model read a rendered image of the scene
+                instead (see docs/roadmap.md, Phase 4).
         """
 
         outcomes = []
@@ -159,7 +181,13 @@ class Evaluator:
             if i > 0 and delay_seconds > 0:
                 time.sleep(delay_seconds)
             outcomes.append(
-                run_single_task(task, planner, self.executor, allow_feedback=allow_feedback)
+                run_single_task(
+                    task,
+                    planner,
+                    self.executor,
+                    allow_feedback=allow_feedback,
+                    perception=perception,
+                )
             )
         return compute_summary(planner.name, outcomes)
 

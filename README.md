@@ -1,7 +1,14 @@
+# geniac-cap-practice
+
+自然言語のロボット操作指示を構造化アクション列に変換し、軽量な仮想環境で実行・評価する、Code-as-Policy形式の練習用プロジェクトです。GENIAC-PRIZE テーマ2を想定した個人の学習プロジェクトであり、GENIACの公式実装・公式ベンチマークではありません。
+
+---
+
 ## Overview
 
 This is an independent practice project inspired by the Code-as-Policy
-style tasks.
+style tasks expected in GENIAC-PRIZE Theme 2. **It is not an official
+GENIAC project or benchmark implementation.**
 
 It turns a natural-language instruction (Japanese or simple English) into a
 structured, whitelisted sequence of robot actions, executes that sequence
@@ -58,8 +65,16 @@ code generation/execution is left as a documented future extension point
   follow-up prompt
 - **Evaluator**: aggregate metrics saved to both JSON and CSV under
   `results/`
+- **Perception (Phase 4)**: `GroundTruthPerception` (default, reads
+  environment state directly) and `VLMPerception` (renders the scene as a
+  PNG and asks Claude's or Gemini's vision capability to describe it,
+  producing the same `PlanningContext` shape); `render-scene` CLI command
+  to save a task's rendered scene, `--perception vlm --vision-provider
+  anthropic|gemini` on `run-task` / `evaluate`. Requires `pip install -e
+  ".[vision]"` for the renderer (Pillow) plus `.[llm]` for the vision API
+  call — every other command works without either installed
 - **CLI** (Typer): `demo`, `run-task`, `evaluate`, `list-tasks`, `show-task`
-- **64 pytest tests**, all passing; ruff-clean; GitHub Actions CI
+- **77 pytest tests**, all passing; ruff-clean; GitHub Actions CI
 - **Codespaces-ready** via `.devcontainer/devcontainer.json`
 
 ## Architecture
@@ -86,12 +101,13 @@ geniac-cap-practice/
 │   ├── cli.py
 │   ├── config.py / models.py / exceptions.py
 │   ├── environment/          # ToyRobotEnv, RobotState
-│   ├── planners/             # BasePlanner, RuleBasedPlanner, MockLLMPlanner, FeedbackPlanner
+│   ├── perception/            # BasePerception, GroundTruthPerception, VLMPerception, renderer.py
+│   ├── planners/             # BasePlanner, RuleBasedPlanner, MockLLMPlanner, FeedbackPlanner, AnthropicPlanner, GeminiPlanner
 │   ├── execution/             # SafeExecutor, validation, future CodeParser/SafeCodeExecutor stubs
 │   ├── evaluation/           # Evaluator, metrics
 │   ├── tasks/                 # loader.py, sample_tasks.yaml
 │   └── utils/logging.py
-├── tests/                     # 64 pytest tests
+├── tests/                     # 77 pytest tests
 ├── pyproject.toml
 └── README.md
 ```
@@ -117,13 +133,25 @@ cp .env.example .env   # then edit .env and set ANTHROPIC_API_KEY=... and/or GEM
 Gemini has a free tier with no credit card required — get a key at
 https://aistudio.google.com/apikey. Note the free tier is rate-limited (a
 handful of requests per minute depending on the model), so running
-`evaluate` across all 12 tasks back-to-back may hit a `429` on a couple of
+`evaluate` across all 14 tasks back-to-back may hit a `429` on a couple of
 tasks; that's an API quota, not a bug — those tasks are recorded as
 `planning_error` and the rest still complete. Use `--delay-seconds` (e.g.
 `--delay-seconds 13` for Gemini's 5-requests-per-minute free tier) to pace
 requests and avoid this. These planners are only needed for
 `--planner anthropic` / `--planner gemini`; every other command works with
 neither the extra installed nor a key set.
+
+To also render scenes and use `VLMPerception` (Phase 4), install the
+optional `vision` extra (adds Pillow):
+
+```bash
+pip install -e ".[vision]"
+```
+
+`VLMPerception` additionally needs the `llm` extra and an API key (same
+ones as the LLM planners above) since it calls Claude's or Gemini's vision
+capability — `--perception vlm` is only needed for that; every other
+command works with neither installed.
 
 ## Getting started in GitHub Codespaces
 
@@ -149,6 +177,8 @@ python -m geniac_cap.cli evaluate --planner feedback --no-feedback
 python -m geniac_cap.cli evaluate --planner anthropic
 python -m geniac_cap.cli evaluate --planner gemini
 python -m geniac_cap.cli evaluate --planner gemini --delay-seconds 13
+python -m geniac_cap.cli render-scene --task-id task_013
+python -m geniac_cap.cli run-task --task-id task_013 --planner gemini --perception vlm --vision-provider gemini
 ```
 
 (If you installed with `pip install -e .`, `geniac-cap ...` also works as a

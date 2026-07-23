@@ -29,6 +29,9 @@ llm = [
     "anthropic>=0.40,<1.0",
     "google-genai>=0.5",
 ]
+vision = [
+    "Pillow>=10.0",
+]
 
 [project.scripts]
 geniac-cap = "geniac_cap.cli:app"
