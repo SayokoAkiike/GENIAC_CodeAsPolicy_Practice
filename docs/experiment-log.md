@@ -60,7 +60,7 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 ## Generalized feedback loop + harder tasks (task_013, task_014)
 
 - **Date:** 2026-07-23
-- **Commit:** (fill in after pushing)
+- **Commit:** `3277f14`
 - **Planner:** rule-based, feedback (both now run against 14 tasks)
 - **Dataset:** sample_tasks.yaml (14 tasks: 12 single-object + 2 hard)
 - **Number of tasks:** 14
@@ -89,7 +89,7 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 ## GeminiPlanner vs RuleBasedPlanner on the hard tasks (task_013, task_014)
 
 - **Date:** 2026-07-23
-- **Commit:** (fill in after pushing)
+- **Commit:** `3277f14`
 - **Planner:** gemini (gemini-flash-latest) vs rule-based
 - **Dataset:** sample_tasks.yaml, task_013 and task_014 only
 - **Number of tasks:** 2
@@ -129,7 +129,7 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 ## Phase 4 implementation notes (bug found and fixed during development)
 
 - **Date:** 2026-07-23
-- **Commit:** (fill in after pushing)
+- **Commit:** `7e98d38`
 - **Change:** Added `geniac_cap.perception` (`GroundTruthPerception`,
   `VLMPerception`, `renderer.py`), wired into the Evaluator/CLI via
   `--perception` / `--vision-provider`, plus a `render-scene` CLI command.
@@ -148,7 +148,7 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 ## VLMPerception first real test (Gemini)
 
 - **Date:** 2026-07-23
-- **Commit:** (fill in after pushing)
+- **Commit:** `713626e`
 - **Planner:** gemini, **Perception:** vlm (vision-provider: gemini)
 - **Dataset:** task_001 (single task)
 - **Result:** VLMPerception succeeded (200 OK) -- the scene render was
@@ -168,7 +168,7 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 ## Step 0 of the model-improvement roadmap: evaluation tracking
 
 - **Date:** 2026-07-23
-- **Commit:** (fill in after pushing)
+- **Commit:** `d8f0794`
 - **Change:** Added `evaluate --compare-to <path.json> --label "..."`,
   backed by `geniac_cap.evaluation.metrics.load_summary` /
   `compare_summaries` / `SummaryComparison.as_readme_row`. Loads a
@@ -186,7 +186,7 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 ## Step 1 of the model-improvement roadmap: planner cascade
 
 - **Date:** 2026-07-23
-- **Commit:** (fill in after pushing)
+- **Commit:** `772882b`
 - **Change:** Added `geniac_cap.evaluation.cascade.run_single_task_cascade`
   and `Evaluator.evaluate_cascade`, exposed via `--cascade
   "rule-based,gemini"` on `run-task` / `evaluate`. Tries planners in order
@@ -215,7 +215,7 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 ## Step 2 of the model-improvement roadmap: synthetic task augmentation
 
 - **Date:** 2026-07-23
-- **Commit:** (fill in after pushing)
+- **Commit:** `d0b522a`
 - **Change:** Added `geniac_cap.tasks.generator` (single-object, two-object,
   container templates over combinatorial color/shape/location/container
   pools) and `save_tasks_to_yaml`, exposed via `generate-tasks --single N
@@ -238,7 +238,8 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 ## Step 3 of the model-improvement roadmap: vocabulary distillation
 
 - **Date:** 2026-07-23
-- **Commit:** (fill in after pushing)
+- **Commit:** `e6b1aea` (inferred from the Step 4 push range shown below; no
+  explicit `git push` output was pasted back for this step specifically)
 - **Change:** Added `geniac_cap.planners.vocabulary_distiller`
   (`VocabularyDistiller`, `filter_probes_needing_harvest`,
   `default_probe_instructions`) and `harvest-vocabulary --provider
@@ -266,7 +267,7 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 ## Step 4 of the model-improvement roadmap: prompt hill-climbing
 
 - **Date:** 2026-07-23
-- **Commit:** (fill in after pushing)
+- **Commit:** `968bd30`
 - **Change:** Added `AnthropicPlanner`/`GeminiPlanner` `system_prompt`
   override, `geniac_cap.planners.prompt_hillclimb` (`hill_climb`,
   `PromptMutation`, `DEFAULT_MUTATIONS`), and `hill-climb-prompt --planner
@@ -295,7 +296,7 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 ## Step 5 of the model-improvement roadmap: contextual bandit for cascade selection
 
 - **Date:** 2026-07-23
-- **Commit:** (fill in after pushing)
+- **Commit:** `2ba18da`
 - **Change:** Added `geniac_cap.evaluation.bandit`
   (`EpsilonGreedyBandit`, `run_bandit_episode`), `Evaluator.evaluate_bandit`,
   and `bandit-cascade --arms "rule-based;rule-based,gemini" --epsilon

@@ -298,5 +298,11 @@ Tracks changes made under <a href="docs/model-improvement-roadmap.md">the zero-b
 
 | # | Change | PR/Branch | Date | Result |
 |---|---|---|---|---|
+| 0 | Evaluation tracking (`--compare-to`/`--label`) | `d8f0794` | 2026-07-23 | infra only; verified diff logic reports 0.00% on a same-vs-same run |
+| 1 | Planner cascade (`--cascade`) | `772882b` | 2026-07-23 | 12/14 tasks solved by tier 1 alone; LLM tier only needed for 2/14 (~86% fewer LLM calls) |
+| 2 | Synthetic task augmentation (`generate-tasks`) | `d0b522a` | 2026-07-23 | 16 generated tasks reproduced task_013/014's exact failure pattern (50% success, split cleanly by task type) |
+| 3 | Vocabulary distillation (`harvest-vocabulary`) | `e6b1aea` | 2026-07-23 | 9/11 probe instructions correctly flagged as needing harvest; logic verified with a fake client |
+| 4 | Prompt hill-climbing (`hill-climb-prompt`) | `968bd30` | 2026-07-23 | simulated LLM: `container_reminder` mutation raised task_013 success 0%→100% |
+| 5 | Contextual bandit (`bandit-cascade`) | `2ba18da` | 2026-07-23 | learned `rule-based` alone for easy/medium, `rule-based→smart-llm` for hard (0.964 vs 0.5 avg reward) |
 
 </details>
