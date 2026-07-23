@@ -164,3 +164,21 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
   `evaluate --perception vlm` comparison once the daily quota resets (or
   with a fresh API key/project), and log ground-truth vs. vlm success
   rates using the template above.
+
+## Step 0 of the model-improvement roadmap: evaluation tracking
+
+- **Date:** 2026-07-23
+- **Commit:** (fill in after pushing)
+- **Change:** Added `evaluate --compare-to <path.json> --label "..."`,
+  backed by `geniac_cap.evaluation.metrics.load_summary` /
+  `compare_summaries` / `SummaryComparison.as_readme_row`. Loads a
+  previously saved evaluation JSON, diffs success rate and average steps
+  against the current run, and prints a row ready to paste into README's
+  "Model improvement log" table.
+- **Interpretation:** this is purely infrastructure (no planner/prompt
+  change), so no success-rate delta is expected. Verified with a
+  same-vs-same rule-based run: 85.71% -> 85.71% (+0.00%), confirming the
+  diff logic reports zero change correctly.
+- **Next action:** use this for every subsequent step
+  (1-5) in docs/model-improvement-roadmap.md, pasting the printed row into
+  README after each change.

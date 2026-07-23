@@ -68,7 +68,7 @@ code generation/execution is left as a documented future extension point
   ".[vision]"` for the renderer (Pillow) plus `.[llm]` for the vision API
   call — every other command works without either installed
 - **CLI** (Typer): `demo`, `run-task`, `evaluate`, `list-tasks`, `show-task`
-- **77 pytest tests**, all passing; ruff-clean; GitHub Actions CI
+- **84 pytest tests**, all passing; ruff-clean; GitHub Actions CI
 - **Codespaces-ready** via `.devcontainer/devcontainer.json`
 
 ## Architecture
@@ -101,7 +101,7 @@ geniac-cap-practice/
 │   ├── evaluation/           # Evaluator, metrics
 │   ├── tasks/                 # loader.py, sample_tasks.yaml
 │   └── utils/logging.py
-├── tests/                     # 77 pytest tests
+├── tests/                     # 84 pytest tests
 ├── pyproject.toml
 └── README.md
 ```
@@ -173,6 +173,7 @@ python -m geniac_cap.cli evaluate --planner gemini
 python -m geniac_cap.cli evaluate --planner gemini --delay-seconds 13
 python -m geniac_cap.cli render-scene --task-id task_013
 python -m geniac_cap.cli run-task --task-id task_013 --planner gemini --perception vlm --vision-provider gemini
+python -m geniac_cap.cli evaluate --planner rule-based --compare-to results/evaluation_20260101_120000.json --label "describe the change"
 ```
 
 (If you installed with `pip install -e .`, `geniac-cap ...` also works as a

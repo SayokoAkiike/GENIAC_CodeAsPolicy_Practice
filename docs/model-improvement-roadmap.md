@@ -19,7 +19,8 @@ LLM APIs.
 
 ## Adopted techniques, in implementation order
 
-### Step 0 — Evaluation tracking (foundation)
+### Step 0 — Evaluation tracking (foundation) ✅ implemented
+
 Before changing anything, add a lightweight mechanism to record each
 change's measured effect (success rate, average steps) against a
 before/after baseline. Without this, "improvement" claims for every
@@ -27,6 +28,11 @@ technique below are unverifiable. This is also the mechanism behind the
 compact log at the bottom of `README.md`.
 - **Cost:** none
 - **Complexity:** low
+- **Implementation:** `evaluate --compare-to <previous-results.json> --label
+  "..."` loads a previously saved evaluation JSON, diffs it against the
+  current run, and prints a row ready to paste into the README log table.
+  See `geniac_cap.evaluation.metrics.compare_summaries` /
+  `SummaryComparison.as_readme_row`.
 
 ### Step 1 — Planner cascade (cost-aware routing)
 Try `RuleBasedPlanner` first (free, instant, deterministic); only call a

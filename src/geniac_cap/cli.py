@@ -16,6 +16,7 @@ from rich.table import Table
 from geniac_cap.config import settings
 from geniac_cap.environment.toy_robot import ToyRobotEnv
 from geniac_cap.evaluation.evaluator import Evaluator, run_single_task
+from geniac_cap.evaluation.metrics import SummaryLoadError, compare_summaries, load_summary
 from geniac_cap.exceptions import GeniacCapError
 from geniac_cap.execution.executor import SafeExecutor
 from geniac_cap.perception.base import BasePerception
@@ -221,6 +222,18 @@ def evaluate(
     vision_provider: str = typer.Option(
         "anthropic", "--vision-provider", help="Used when --perception vlm: anthropic or gemini"
     ),
+    compare_to: str = typer.Option(
+        None,
+        "--compare-to",
+        help=(
+            "Path to a previous evaluation JSON (see 'Saved:' output) to diff "
+            "this run against. Prints a delta and a README-log-ready row "
+            "(see docs/model-improvement-roadmap.md)."
+        ),
+    ),
+    label: str = typer.Option(
+        "", "--label", help="Short description of the change, used in the README-ready row"
+    ),
 ) -> None:
     """Evaluate a planner across all sample tasks and save JSON/CSV results."""
 
@@ -228,6 +241,14 @@ def evaluate(
     planner_obj = _make_planner(planner)
     perception_obj = _make_perception(perception, vision_provider)
     evaluator = Evaluator()
+
+    baseline_summary = None
+    if compare_to:
+        try:
+            baseline_summary = load_summary(compare_to)
+        except SummaryLoadError as exc:
+            console.print(f"[red]Error:[/red] {escape(str(exc))}")
+            raise typer.Exit(code=1) from exc
 
     summary = evaluator.evaluate(
         tasks,
@@ -260,6 +281,21 @@ def evaluate(
 
     console.print(f"\nSaved: {json_path}")
     console.print(f"Saved: {csv_path}")
+
+    if baseline_summary is not None:
+        comparison = compare_summaries(baseline_summary, summary)
+        delta_sign = "+" if comparison.success_rate_delta >= 0 else ""
+        console.print("\n[bold]Comparison vs. baseline:[/bold]")
+        console.print(
+            f"  success_rate: {baseline_summary.success_rate:.2%} -> "
+            f"{summary.success_rate:.2%} ({delta_sign}{comparison.success_rate_delta:.2%})"
+        )
+        console.print(
+            f"  average_steps: {baseline_summary.average_steps:.2f} -> "
+            f"{summary.average_steps:.2f} ({comparison.average_steps_delta:+.2f})"
+        )
+        console.print("\n[bold]README log row (paste into the Model improvement log table):[/bold]")
+        console.print(escape(comparison.as_readme_row(label or "(describe the change)")))
 
 
 if __name__ == "__main__":
