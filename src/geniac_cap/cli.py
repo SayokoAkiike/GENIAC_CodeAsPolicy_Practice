@@ -29,7 +29,9 @@ from geniac_cap.planners.anthropic_planner import AnthropicPlanner
 from geniac_cap.planners.base import BasePlanner, PlanningContext
 from geniac_cap.planners.feedback import FeedbackPlanner
 from geniac_cap.planners.gemini_planner import GeminiPlanner
+from geniac_cap.planners.llm_prompts import ACTION_PLAN_SYSTEM_PROMPT
 from geniac_cap.planners.mock_llm import MockLLMPlanner
+from geniac_cap.planners.prompt_hillclimb import DEFAULT_MUTATIONS, hill_climb
 from geniac_cap.planners.rule_based import LOCATION_SYNONYMS, OBJECT_SYNONYMS, RuleBasedPlanner
 from geniac_cap.planners.vocabulary_distiller import (
     VocabularyDistiller,
@@ -174,6 +176,93 @@ def harvest_vocabulary(
         encoding="utf-8",
     )
     console.print(f"\nSaved proposal to: {output_path}")
+
+
+@app.command("hill-climb-prompt")
+def hill_climb_prompt(
+    planner: str = typer.Option(
+        "gemini", "--planner", help="LLM planner to optimize: anthropic or gemini"
+    ),
+    tasks_file: str = typer.Option(
+        None, "--tasks-file", help="Optional path to a custom tasks YAML"
+    ),
+    delay_seconds: float = typer.Option(
+        0.0, "--delay-seconds", help="Pause between tasks per evaluation run (see 'evaluate')"
+    ),
+    output: str = typer.Option(
+        "results/hill_climb_result.json", "--output", help="Where to save the run history"
+    ),
+) -> None:
+    """Prompt hill-climbing (Step 4: docs/model-improvement-roadmap.md).
+
+    Treats the system prompt as the only "trainable" artifact: evaluates a
+    baseline, tries each candidate mutation in turn, and keeps only the
+    ones that don't decrease success rate. Prints the final accepted
+    prompt for human review -- nothing is auto-applied to
+    planners/llm_prompts.py.
+    """
+
+    if planner not in ("anthropic", "gemini"):
+        raise typer.BadParameter("--planner must be 'anthropic' or 'gemini' for hill-climb-prompt")
+
+    tasks = load_tasks(tasks_file)
+    evaluator = Evaluator()
+    planner_cls = AnthropicPlanner if planner == "anthropic" else GeminiPlanner
+
+    def evaluate_fn(prompt: str):
+        candidate_planner = planner_cls(system_prompt=prompt)
+        return evaluator.evaluate(tasks, candidate_planner, delay_seconds=delay_seconds)
+
+    console.print(f"Running baseline + {len(DEFAULT_MUTATIONS)} mutation(s) against {planner}...")
+    result = hill_climb(ACTION_PLAN_SYSTEM_PROMPT, evaluate_fn)
+
+    table = Table(title="Prompt hill-climb results")
+    table.add_column("step")
+    table.add_column("success_rate")
+    table.add_column("accepted")
+    for step in result.steps:
+        table.add_row(
+            step.mutation_name,
+            f"{step.success_rate:.2%}",
+            "[green]yes[/green]" if step.accepted else "[red]no[/red]",
+        )
+    console.print(table)
+
+    console.print(
+        f"\nBaseline: {result.baseline_success_rate:.2%} -> "
+        f"Final: {result.final_success_rate:.2%} "
+        f"({result.improvement:+.2%})"
+    )
+
+    output_path = Path(output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(
+            {
+                "baseline_success_rate": result.baseline_success_rate,
+                "final_success_rate": result.final_success_rate,
+                "final_prompt": result.final_prompt,
+                "steps": [
+                    {
+                        "mutation_name": s.mutation_name,
+                        "success_rate": s.success_rate,
+                        "accepted": s.accepted,
+                    }
+                    for s in result.steps
+                ],
+            },
+            indent=2,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    console.print(f"\nSaved run history to: {output_path}")
+    if result.improvement > 0:
+        console.print(
+            "\n[bold]Final accepted prompt (review before merging into "
+            "planners/llm_prompts.py):[/bold]"
+        )
+        console.print(escape(result.final_prompt))
 
 
 @app.command("generate-tasks")

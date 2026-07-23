@@ -99,7 +99,8 @@ distillation (LLM output → static rules), not neural distillation.
 - **Limit:** only fixes vocabulary gaps, not RuleBasedPlanner's structural
   limits (multi-object tasks, containers)
 
-### Step 4 — Prompt hill-climbing (post-training analog)
+### Step 4 — Prompt hill-climbing (post-training analog) ✅ implemented
+
 Treat the system prompt (and few-shot examples) as the only "trainable"
 artifact. Evaluate a baseline, propose a mutation (add a few-shot example,
 add a self-check instruction, reword a rule), re-evaluate, keep the change
@@ -109,6 +110,16 @@ data" available here.
 - **Cost:** API calls proportional to (mutations tried) × (tasks) × (eval
   runs); pace with `--delay-seconds` on free tiers
 - **Complexity:** medium
+- **Implementation:** `AnthropicPlanner`/`GeminiPlanner` now accept a
+  `system_prompt` override (for evaluating mutated prompts without
+  touching the shared default). `geniac_cap.planners.prompt_hillclimb`
+  implements the greedy accept-if-not-worse loop as a pure function of
+  `str -> EvaluationSummary`, decoupled from any specific planner/task set.
+  CLI: `hill-climb-prompt --planner anthropic|gemini`.
+- **Verified (fake client, see docs/experiment-log.md):** simulating an
+  LLM that forgets to call `open_container` unless reminded, the loop
+  correctly found and kept the `container_reminder` mutation, improving
+  task_013 from 0% to 100% success.
 
 ### Step 5 — Bandit-based strategy selection
 A multi-armed bandit (e.g. epsilon-greedy or UCB) that learns, from

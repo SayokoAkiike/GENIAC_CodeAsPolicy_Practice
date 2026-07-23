@@ -54,7 +54,9 @@ code generation/execution is left as a documented future extension point
   neither installed nor set
 - **GeminiPlanner**: same approach against the Google Gemini API (a genuinely
   free tier is available, no credit card required); requires `pip install -e
-  ".[llm]"` and `GEMINI_API_KEY`
+  ".[llm]"` and `GEMINI_API_KEY`. Both LLM planners accept a `system_prompt`
+  override, used by `hill-climb-prompt` (see below) to evaluate mutated
+  prompts without touching the shared default
 - **MockLLMPlanner**: canned-response planner as an LLM-planner stand-in
 - **SafeExecutor**: whitelist-only execution, argument validation, max-step
   limit, structured failure reasons, per-step logging
@@ -80,7 +82,7 @@ code generation/execution is left as a documented future extension point
   ".[vision]"` for the renderer (Pillow) plus `.[llm]` for the vision API
   call — every other command works without either installed
 - **CLI** (Typer): `demo`, `run-task`, `evaluate`, `list-tasks`, `show-task`
-- **105 pytest tests**, all passing; ruff-clean; GitHub Actions CI
+- **110 pytest tests**, all passing; ruff-clean; GitHub Actions CI
 - **Codespaces-ready** via `.devcontainer/devcontainer.json`
 
 ## Architecture
@@ -113,7 +115,7 @@ geniac-cap-practice/
 │   ├── evaluation/           # Evaluator, metrics
 │   ├── tasks/                 # loader.py, sample_tasks.yaml
 │   └── utils/logging.py
-├── tests/                     # 105 pytest tests
+├── tests/                     # 110 pytest tests
 ├── pyproject.toml
 └── README.md
 ```
@@ -190,6 +192,7 @@ python -m geniac_cap.cli evaluate --cascade "rule-based,gemini" --delay-seconds 
 python -m geniac_cap.cli generate-tasks --single 10 --two-object 5 --container 5
 python -m geniac_cap.cli evaluate --planner rule-based --tasks-file results/synthetic_tasks.yaml
 python -m geniac_cap.cli harvest-vocabulary --provider gemini
+python -m geniac_cap.cli hill-climb-prompt --planner gemini --delay-seconds 13
 ```
 
 (If you installed with `pip install -e .`, `geniac-cap ...` also works as a

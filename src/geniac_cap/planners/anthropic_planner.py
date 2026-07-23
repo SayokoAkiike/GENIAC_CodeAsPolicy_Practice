@@ -45,6 +45,7 @@ class AnthropicPlanner(BasePlanner):
         model: str | None = None,
         client: object | None = None,
         api_key: str | None = None,
+        system_prompt: str | None = None,
     ) -> None:
         """Create an AnthropicPlanner.
 
@@ -56,11 +57,16 @@ class AnthropicPlanner(BasePlanner):
             api_key: Explicit API key, overriding the ANTHROPIC_API_KEY
                 environment variable. Pass an empty string to force "no key"
                 regardless of the environment (used in tests).
+            system_prompt: Override the default ACTION_PLAN_SYSTEM_PROMPT.
+                Used by prompt hill-climbing (Step 4:
+                docs/model-improvement-roadmap.md) to evaluate mutated
+                prompts without changing the shared default.
         """
 
         self._model = model or settings.model_name or DEFAULT_MODEL
         self._client = client
         self._api_key = api_key if api_key is not None else settings.anthropic_api_key
+        self._system_prompt = system_prompt or _SYSTEM_PROMPT
 
     def _get_client(self):
         if self._client is not None:
@@ -99,7 +105,7 @@ class AnthropicPlanner(BasePlanner):
             response = client.messages.create(
                 model=self._model,
                 max_tokens=1024,
-                system=_SYSTEM_PROMPT,
+                system=self._system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
             )
         except PlanningError:

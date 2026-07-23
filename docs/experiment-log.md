@@ -262,3 +262,32 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
   `planners/rule_based.py`'s OBJECT_SYNONYMS/LOCATION_SYNONYMS; then
   re-run the 9 probe instructions through RuleBasedPlanner to confirm they
   now succeed.
+
+## Step 4 of the model-improvement roadmap: prompt hill-climbing
+
+- **Date:** 2026-07-23
+- **Commit:** (fill in after pushing)
+- **Change:** Added `AnthropicPlanner`/`GeminiPlanner` `system_prompt`
+  override, `geniac_cap.planners.prompt_hillclimb` (`hill_climb`,
+  `PromptMutation`, `DEFAULT_MUTATIONS`), and `hill-climb-prompt --planner
+  anthropic|gemini`. Greedily accepts prompt mutations that don't decrease
+  success rate, reusing Step 0's EvaluationSummary as the reward signal.
+- **Dataset:** task_013 (the container task) only, with a fake Gemini
+  client simulating an LLM that only remembers to call open_container
+  when the prompt explicitly reminds it to (a realistic failure mode: the
+  model otherwise correctly identifies the object/destination but omits
+  the container step)
+- **Result:** baseline 0% -> after `container_reminder` mutation: 100%
+  (+100%). The `self_check_names` mutation (tried first) had no effect and
+  was still accepted (ties count as "not worse"); `multi_object_reminder`
+  had no effect on this single-task, container-only run.
+- **Interpretation:** this demonstrates the full mechanism working
+  end-to-end: a specific, plausible LLM failure mode (forgetting a
+  required action) is fixed by a targeted prompt addition, and the
+  hill-climbing loop correctly identifies and keeps only the mutation that
+  helped, using nothing but the existing Evaluator as ground truth.
+- **Next action:** run `hill-climb-prompt --planner gemini` for real
+  against the full 14-task set (or generated tasks from Step 2) once a key
+  is available; if `container_reminder` and/or `multi_object_reminder`
+  are accepted, review the final prompt and consider merging it into
+  `planners/llm_prompts.py`'s `ACTION_PLAN_SYSTEM_PROMPT` default.

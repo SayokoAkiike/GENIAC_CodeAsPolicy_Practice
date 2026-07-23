@@ -47,6 +47,7 @@ class GeminiPlanner(BasePlanner):
         model: str | None = None,
         client: object | None = None,
         api_key: str | None = None,
+        system_prompt: str | None = None,
     ) -> None:
         """Create a GeminiPlanner.
 
@@ -57,11 +58,16 @@ class GeminiPlanner(BasePlanner):
             api_key: Explicit API key, overriding the GEMINI_API_KEY
                 environment variable. Pass an empty string to force "no key"
                 regardless of the environment (used in tests).
+            system_prompt: Override the default ACTION_PLAN_SYSTEM_PROMPT.
+                Used by prompt hill-climbing (Step 4:
+                docs/model-improvement-roadmap.md) to evaluate mutated
+                prompts without changing the shared default.
         """
 
         self._model = model or DEFAULT_MODEL
         self._client = client
         self._api_key = api_key if api_key is not None else settings.gemini_api_key
+        self._system_prompt = system_prompt or ACTION_PLAN_SYSTEM_PROMPT
 
     def _get_client(self):
         if self._client is not None:
@@ -106,7 +112,7 @@ class GeminiPlanner(BasePlanner):
                 model=self._model,
                 contents=user_prompt,
                 config={
-                    "system_instruction": ACTION_PLAN_SYSTEM_PROMPT,
+                    "system_instruction": self._system_prompt,
                     "response_mime_type": "application/json",
                 },
             )
