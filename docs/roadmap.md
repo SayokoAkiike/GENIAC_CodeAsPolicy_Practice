@@ -71,8 +71,10 @@ one capability on top of a working, tested foundation.
 
 - Run the same task set across multiple planners/models and report
   comparative metrics
-- Explore fine-tuning a planner on collected (instruction, successful plan)
-  pairs
+- See [`model-improvement-roadmap.md`](model-improvement-roadmap.md) for a
+  detailed, zero-budget/no-GPU breakdown of specific techniques (planner
+  cascade, synthetic task augmentation, symbolic distillation, prompt
+  hill-climbing, bandit-based strategy selection) and their adoption order
 
 ## Phase 7 — Healthcare and assistive robotics tasks
 

@@ -264,3 +264,15 @@ clinical actions.
 ## License
 
 [MIT](LICENSE)
+
+---
+
+<details>
+<summary>Model improvement log</summary>
+
+Tracks changes made under <a href="docs/model-improvement-roadmap.md">the zero-budget/no-GPU model improvement roadmap</a>, in adoption order.
+
+| # | Change | PR/Branch | Date | Result |
+|---|---|---|---|---|
+
+</details>
