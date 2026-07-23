@@ -296,19 +296,19 @@ clinical actions.
 
 Tracks changes made under <a href="docs/model-improvement-roadmap.md">the zero-budget/no-GPU model improvement roadmap</a>, in adoption order.
 
-**Headline metric:** success rate across all 14 sample tasks (`sample_tasks.yaml`), the one number tracked consistently across every row so they're comparable at a glance. `RuleBasedPlanner` alone has been flat at **12/14 (85.71%)** throughout — none of the steps below change what it can solve, only *how efficiently/reliably the LLM tier is reached and used*. Rows marked 🧪 used a fake/mock client (no real API call, sandbox-only logic check); rows marked ✅ were confirmed against a real API.
+**Columns:** *Success rate* = performance on the full 14 sample tasks (the one number comparable across every row — `RuleBasedPlanner` alone has stayed flat at **12/14 (85.71%)** throughout; none of these steps change what it can solve, only how the LLM tier is reached/used). *Efficiency* = change in how many (costly/quota-limited) LLM calls are needed for the same outcome. *Learning/Adaptation* = evidence the mechanism itself improves or adapts (as opposed to just running a fixed pipeline). *Verified* = 🧪 fake/mock client (sandbox logic check only) vs ✅ real API call.
 
-| # | Change | PR/Branch | Date | 14-task success rate | Result detail |
-|---|---|---|---|---|---|
-| — | Baseline: RuleBasedPlanner alone | `1c77297` | 2026-07-23 | ✅ 12/14 (85.71%) | reference point; fails task_013 (container) and task_014 (two-object) by construction |
-| 0 | Evaluation tracking (`--compare-to`/`--label`) | `d8f0794` | 2026-07-23 | 12/14 (85.71%, unchanged) | infra only, no planner change; verified the diff tool itself reports 0.00% on a same-vs-same run |
-| 1 | Planner cascade (`--cascade`) | `772882b` | 2026-07-23 | 🧪 12/14 (85.71%, unchanged) | mock-llm tier tested; real gain is efficiency, not success rate: only 2/14 tasks ever reach the 2nd tier (~86% fewer LLM calls vs. calling an LLM on all 14) |
-| 2 | Synthetic task augmentation (`generate-tasks`) | `d0b522a` | 2026-07-23 | N/A (separate 16-task synthetic set) | 8/16 (50%), split cleanly single-object 100% / two-object 0% / container 0% — validates the generator, not a change to the 14-task score |
-| 3 | Vocabulary distillation (`harvest-vocabulary`) | `e6b1aea` | 2026-07-23 | N/A (not yet merged) | 9/11 probes correctly flagged; proposed synonyms not yet reviewed/merged, so 14-task score is still 12/14 |
-| 4 | Prompt hill-climbing (`hill-climb-prompt`) | `968bd30` | 2026-07-23 | 🧪 N/A (single-task demo only) | simulated LLM on task_013 alone: 0%→100% after `container_reminder`; not yet run against the full 14-task set |
-| 5 | Contextual bandit (`bandit-cascade`) | `2ba18da` | 2026-07-23 | 🧪 12/14 (85.71%, unchanged) | fake "smart-llm" tier tested; learned correctly which contexts need the 2nd tier, but success rate itself matches the cascade baseline |
-| — | **Best real-API result so far (not yet run as one pass)** | — | 2026-07-23 | ✅→✅ 14/14 (100%) *projected* | real Gemini solved all 12 single-object tasks in one run, **and separately** solved task_013 + task_014 in another run — never combined into a single 14-task pass yet |
+| # | Change | PR/Branch | Date | Success rate (14-task) | Efficiency | Learning/Adaptation | Verified |
+|---|---|---|---|---|---|---|---|
+| — | Baseline: RuleBasedPlanner alone | `1c77297` | 2026-07-23 | 12/14 (85.71%) | — (0 LLM calls) | — | ✅ |
+| 0 | Evaluation tracking (`--compare-to`/`--label`) | `d8f0794` | 2026-07-23 | 12/14 (unchanged) | — | — (infra, not a planner change) | ✅ |
+| 1 | Planner cascade (`--cascade`) | `772882b` | 2026-07-23 | 12/14 (unchanged) | ~86% fewer LLM calls (only 2/14 tasks reach tier 2) | — | 🧪 |
+| 2 | Synthetic task augmentation (`generate-tasks`) | `d0b522a` | 2026-07-23 | N/A — separate 16-task set: 8/16 (50%) | — | — (dataset tool, not a planner) | ✅ |
+| 3 | Vocabulary distillation (`harvest-vocabulary`) | `e6b1aea` | 2026-07-23 | 12/14 (unchanged; proposal not yet merged) | — | 9/11 probes correctly identified as needing new vocabulary | 🧪 |
+| 4 | Prompt hill-climbing (`hill-climb-prompt`) | `968bd30` | 2026-07-23 | N/A — single-task demo only | — | task_013 success 0%→100% after 1 accepted mutation (of 3 tried) | 🧪 |
+| 5 | Contextual bandit (`bandit-cascade`) | `2ba18da` | 2026-07-23 | 12/14 (unchanged) | matches cascade (tier 2 only reached when needed) | learned reward 0.964 (hard tasks, LLM tier) vs 0.5 (hard tasks, rule-based only), per-context | 🧪 |
+| — | **Best real-API result so far** | — | 2026-07-23 | 14/14 (100%) *projected, not yet run as one pass* | not yet measured together | — | ✅ (two separate real runs combined) |
 
-**Honest gap:** most of the improvement steps above were validated with fake/mock clients today (no API budget left after the Phase 4 real-API testing hit daily quota). The natural next step is a single real `evaluate --cascade "rule-based,gemini" --delay-seconds 13` run across all 14 tasks once quota resets, to turn that last "projected 100%" row into a real, single-run number.
+**Honest gap:** most rows above (🧪) were validated with fake/mock clients, not real API calls — today's real API testing was spent on Phase 4 and hit Gemini's daily quota before these steps could all be re-verified live. Next concrete action: run `evaluate --cascade "rule-based,gemini" --delay-seconds 13` across all 14 tasks in one pass once quota resets, to replace the projected 100% row with a real, single-run number, and to re-verify Steps 1/3/4/5 against a real model instead of a fake one.
 
 </details>
