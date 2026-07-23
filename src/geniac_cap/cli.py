@@ -18,6 +18,7 @@ from geniac_cap.execution.executor import SafeExecutor
 from geniac_cap.planners.anthropic_planner import AnthropicPlanner
 from geniac_cap.planners.base import BasePlanner, PlanningContext
 from geniac_cap.planners.feedback import FeedbackPlanner
+from geniac_cap.planners.gemini_planner import GeminiPlanner
 from geniac_cap.planners.mock_llm import MockLLMPlanner
 from geniac_cap.planners.rule_based import RuleBasedPlanner
 from geniac_cap.tasks.loader import get_task_by_id, load_tasks
@@ -32,6 +33,7 @@ _PLANNERS: dict[str, type[BasePlanner] | None] = {
     "feedback": FeedbackPlanner,
     "mock-llm": MockLLMPlanner,
     "anthropic": AnthropicPlanner,
+    "gemini": GeminiPlanner,
 }
 
 
@@ -151,6 +153,15 @@ def evaluate(
         "--no-feedback",
         help="Disable the single-retry feedback loop even for the feedback planner",
     ),
+    delay_seconds: float = typer.Option(
+        0.0,
+        "--delay-seconds",
+        help=(
+            "Pause between tasks in seconds. Useful for rate-limited free-tier "
+            "LLM APIs, e.g. '--delay-seconds 13' keeps Gemini's free tier "
+            "(5 requests/minute) from hitting 429s across all 12 tasks."
+        ),
+    ),
 ) -> None:
     """Evaluate a planner across all sample tasks and save JSON/CSV results."""
 
@@ -158,7 +169,9 @@ def evaluate(
     planner_obj = _make_planner(planner)
     evaluator = Evaluator()
 
-    summary = evaluator.evaluate(tasks, planner_obj, allow_feedback=not no_feedback)
+    summary = evaluator.evaluate(
+        tasks, planner_obj, allow_feedback=not no_feedback, delay_seconds=delay_seconds
+    )
     json_path, csv_path = evaluator.save_results(summary)
 
     table = Table(title=f"Evaluation summary — planner: {summary.planner_name}")

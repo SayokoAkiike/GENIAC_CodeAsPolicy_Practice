@@ -21,6 +21,20 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 
 ---
 
+## Gemini vs Rule-based comparison
+
+- **Date:** 2026-07-23
+- **Commit:** (この後pushするコミットハッシュ)
+- **Planner:** gemini (gemini-flash-latest) vs rule-based
+- **Dataset:** sample_tasks.yaml (12 tasks)
+- **Number of tasks:** 12
+- **Success rate:** gemini 100%, rule-based 100%
+- **Average steps:** gemini 3.25, rule-based 4.0
+- **Errors:** none (after adding --delay-seconds 13 to stay under Gemini's free-tier 5 req/min limit; without the delay, later tasks hit 429)
+- **Changes:** added GeminiPlanner + --delay-seconds option
+- **Interpretation:** Gemini matched RuleBasedPlanner's success rate but produced shorter plans by skipping redundant move_to steps when the robot was already co-located with the target object. Free-tier rate limits are the main practical constraint, not planning quality.
+- **Next action:** try harder/multi-object tasks where RuleBasedPlanner would fail, to see if Gemini's more flexible planning gives it an actual edge (not just efficiency).
+
 ## Example (baseline, rule-based planner)
 
 - **Date:** 2026-07-23

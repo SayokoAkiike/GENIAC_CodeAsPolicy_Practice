@@ -43,3 +43,17 @@ def test_feedback_vs_no_feedback_success_rate_comparison(tmp_path):
     without_feedback = evaluator.evaluate(tasks, FeedbackPlanner(), allow_feedback=False)
 
     assert with_feedback.success_rate > without_feedback.success_rate
+
+
+def test_evaluate_delay_seconds_sleeps_between_tasks_not_before_first(tmp_path, monkeypatch):
+    import geniac_cap.evaluation.evaluator as evaluator_module
+
+    sleep_calls: list[float] = []
+    monkeypatch.setattr(evaluator_module.time, "sleep", lambda s: sleep_calls.append(s))
+
+    tasks = load_tasks()[:3]
+    evaluator = Evaluator(results_dir=tmp_path)
+    evaluator.evaluate(tasks, RuleBasedPlanner(), delay_seconds=5.0)
+
+    # 3 tasks -> 2 pauses (no delay before the first task)
+    assert sleep_calls == [5.0, 5.0]

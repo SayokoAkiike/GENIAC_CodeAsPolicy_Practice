@@ -1,20 +1,18 @@
-"""A Planner backed by the Anthropic API.
+"""A Planner backed by the Google Gemini API (free tier friendly).
 
-This is the first real external-LLM planner (Phase 2 of docs/roadmap.md).
-It asks the model to return a JSON array of whitelisted actions, then
-validates that JSON against the same `Action` model the executor already
-enforces -- the model can never bypass the whitelist, it can only produce
-data that either validates or gets rejected as a PlanningError.
+Mirrors AnthropicPlanner's design exactly: the model is asked to return a
+JSON array of whitelisted actions, which is then validated against the same
+`Action` model the executor already enforces. The Gemini response is
+requested with `response_mime_type="application/json"`, so no markdown
+fences should normally appear, but stripping is still applied defensively.
 
 Design choices that keep the rest of the project working without this
 planner:
-  * The ``anthropic`` package is only imported inside ``_get_client()``,
-    not at module import time, so importing this module (and the rest of
-    geniac_cap) never requires the package to be installed.
-  * No API key is read unless this planner is actually constructed and
-    used. Every other command/test in the project works with zero keys.
-  * A ``client`` can be injected in the constructor, which is how the test
-    suite exercises the JSON-parsing logic without making real API calls.
+  * The ``google.genai`` package is only imported inside ``_get_client()``,
+    not at module import time.
+  * No API key is read unless this planner is actually constructed and used.
+  * A ``client`` can be injected in the constructor for testing without any
+    real API calls or the package installed.
 """
 
 from __future__ import annotations
@@ -30,14 +28,18 @@ from geniac_cap.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-DEFAULT_MODEL = "claude-sonnet-4-5"
-_SYSTEM_PROMPT = ACTION_PLAN_SYSTEM_PROMPT
+# "gemini-flash-latest" is Google's auto-updating alias for its current
+# recommended free-tier Flash model (currently gemini-3.5-flash as of mid-
+# 2026). Using the alias instead of a pinned version avoids breaking when
+# Google retires a specific dated model, which happens periodically -- see
+# docs/roadmap.md for a note on keeping this current.
+DEFAULT_MODEL = "gemini-flash-latest"
 
 
-class AnthropicPlanner(BasePlanner):
-    """Planner that delegates plan generation to a Claude model."""
+class GeminiPlanner(BasePlanner):
+    """Planner that delegates plan generation to a Gemini model."""
 
-    name = "anthropic"
+    name = "gemini"
 
     def __init__(
         self,
@@ -45,60 +47,66 @@ class AnthropicPlanner(BasePlanner):
         client: object | None = None,
         api_key: str | None = None,
     ) -> None:
-        """Create an AnthropicPlanner.
+        """Create a GeminiPlanner.
 
         Args:
-            model: Model name to use; defaults to MODEL_NAME env var, then
-                DEFAULT_MODEL.
-            client: Pre-built Anthropic client (mainly for tests). If given,
-                no API key or `anthropic` import is needed.
-            api_key: Explicit API key, overriding the ANTHROPIC_API_KEY
+            model: Model name to use; defaults to DEFAULT_MODEL.
+            client: Pre-built genai.Client (mainly for tests). If given, no
+                API key or `google-genai` import is needed.
+            api_key: Explicit API key, overriding the GEMINI_API_KEY
                 environment variable. Pass an empty string to force "no key"
                 regardless of the environment (used in tests).
         """
 
-        self._model = model or settings.model_name or DEFAULT_MODEL
+        self._model = model or DEFAULT_MODEL
         self._client = client
-        self._api_key = api_key if api_key is not None else settings.anthropic_api_key
+        self._api_key = api_key if api_key is not None else settings.gemini_api_key
 
     def _get_client(self):
         if self._client is not None:
             return self._client
         if not self._api_key:
             raise PlanningError(
-                "ANTHROPIC_API_KEY is not set. Copy .env.example to .env and set "
-                "it, or export ANTHROPIC_API_KEY, to use AnthropicPlanner."
+                "GEMINI_API_KEY is not set. Copy .env.example to .env and set "
+                "it, or export GEMINI_API_KEY, to use GeminiPlanner. Get a free "
+                "key at https://aistudio.google.com/apikey"
             )
         try:
-            import anthropic
+            from google import genai
         except ImportError as exc:
             raise PlanningError(
-                "The 'anthropic' package is not installed. Install it with: "
+                "The 'google-genai' package is not installed. Install it with: "
                 "pip install -e '.[llm]'"
             ) from exc
-        self._client = anthropic.Anthropic(api_key=self._api_key)
+        self._client = genai.Client(api_key=self._api_key)
         return self._client
 
     def plan(self, instruction: str, context: PlanningContext) -> ActionPlan:
         client = self._get_client()
         user_prompt = self._build_user_prompt(instruction, context)
 
-        logger.info("AnthropicPlanner calling model '%s' for: '%s'", self._model, instruction)
+        logger.info("GeminiPlanner calling model '%s' for: '%s'", self._model, instruction)
         try:
-            response = client.messages.create(
+            # The google-genai SDK accepts a plain dict wherever it accepts a
+            # types.GenerateContentConfig, so we use a dict here to avoid an
+            # extra import (and keep this call injectable in tests without
+            # the package installed).
+            response = client.models.generate_content(
                 model=self._model,
-                max_tokens=1024,
-                system=_SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": user_prompt}],
+                contents=user_prompt,
+                config={
+                    "system_instruction": ACTION_PLAN_SYSTEM_PROMPT,
+                    "response_mime_type": "application/json",
+                },
             )
         except PlanningError:
             raise
         except Exception as exc:  # network/API errors of any kind
-            raise PlanningError(f"Anthropic API call failed: {exc}") from exc
+            raise PlanningError(f"Gemini API call failed: {exc}") from exc
 
         text = self._extract_text(response)
         plan = self._parse_plan(text)
-        logger.info("AnthropicPlanner produced %d step(s) for: '%s'", len(plan), instruction)
+        logger.info("GeminiPlanner produced %d step(s) for: '%s'", len(plan), instruction)
         return plan
 
     @staticmethod
@@ -114,21 +122,17 @@ class AnthropicPlanner(BasePlanner):
 
     @staticmethod
     def _extract_text(response) -> str:
-        parts = [
-            block.text
-            for block in getattr(response, "content", [])
-            if getattr(block, "type", None) == "text"
-        ]
-        if not parts:
-            raise PlanningError("Anthropic response contained no text content")
-        return "".join(parts)
+        text = getattr(response, "text", None)
+        if not text:
+            raise PlanningError("Gemini response contained no text content")
+        return text
 
     @staticmethod
     def _strip_code_fences(text: str) -> str:
         cleaned = text.strip()
         if cleaned.startswith("```"):
             lines = cleaned.splitlines()
-            lines = lines[1:]  # drop opening fence (with optional language tag)
+            lines = lines[1:]
             if lines and lines[-1].strip().startswith("```"):
                 lines = lines[:-1]
             cleaned = "\n".join(lines)

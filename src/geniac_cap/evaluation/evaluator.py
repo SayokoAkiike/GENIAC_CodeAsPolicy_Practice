@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -114,13 +115,24 @@ class Evaluator:
         tasks: list[TaskDefinition],
         planner: BasePlanner,
         allow_feedback: bool = True,
+        delay_seconds: float = 0.0,
     ) -> EvaluationSummary:
-        """Run every task in ``tasks`` and return an aggregated EvaluationSummary."""
+        """Run every task in ``tasks`` and return an aggregated EvaluationSummary.
 
-        outcomes = [
-            run_single_task(task, planner, self.executor, allow_feedback=allow_feedback)
-            for task in tasks
-        ]
+        Args:
+            delay_seconds: Optional pause between tasks. Useful for
+                rate-limited free-tier LLM APIs (e.g. Gemini's free tier
+                allows only a few requests per minute) so a full run doesn't
+                immediately trigger 429 errors on later tasks.
+        """
+
+        outcomes = []
+        for i, task in enumerate(tasks):
+            if i > 0 and delay_seconds > 0:
+                time.sleep(delay_seconds)
+            outcomes.append(
+                run_single_task(task, planner, self.executor, allow_feedback=allow_feedback)
+            )
         return compute_summary(planner.name, outcomes)
 
     def save_results(self, summary: EvaluationSummary) -> tuple[Path, Path]:

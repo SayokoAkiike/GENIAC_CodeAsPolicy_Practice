@@ -17,6 +17,9 @@ one capability on top of a working, tested foundation.
 - [x] `AnthropicPlanner` implemented against the existing `BasePlanner`
   interface (`--planner anthropic`), gated behind the optional `llm` extra
   and `ANTHROPIC_API_KEY` so the project still runs with zero API keys
+- [x] `GeminiPlanner` implemented the same way (`--planner gemini`), using
+  Google's free tier (`GEMINI_API_KEY`, no credit card required); both LLM
+  planners share one prompt (`planners/llm_prompts.py`) for a fair comparison
 - [ ] Implement `OpenAIPlanner` / `LocalModelPlanner` the same way
 - [ ] Compare LLM planner vs. `RuleBasedPlanner` success rate on the same
   tasks and log it in `docs/experiment-log.md`

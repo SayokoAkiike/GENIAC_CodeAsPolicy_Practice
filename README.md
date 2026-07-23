@@ -48,6 +48,9 @@ code generation/execution is left as a documented future extension point
   whitelisted, `Action`-validated JSON array; requires `pip install -e
   ".[llm]"` and `ANTHROPIC_API_KEY` — every other command still works with
   neither installed nor set
+- **GeminiPlanner**: same approach against the Google Gemini API (a genuinely
+  free tier is available, no credit card required); requires `pip install -e
+  ".[llm]"` and `GEMINI_API_KEY`
 - **MockLLMPlanner**: canned-response planner as an LLM-planner stand-in
 - **SafeExecutor**: whitelist-only execution, argument validation, max-step
   limit, structured failure reasons, per-step logging
@@ -104,16 +107,24 @@ cd geniac-cap-practice
 pip install -e ".[dev]"
 ```
 
-To also use `AnthropicPlanner`, install the optional `llm` extra and set an
-API key:
+To also use `AnthropicPlanner` or `GeminiPlanner`, install the optional `llm`
+extra and set an API key:
 
 ```bash
 pip install -e ".[llm]"
-cp .env.example .env   # then edit .env and set ANTHROPIC_API_KEY=...
+cp .env.example .env   # then edit .env and set ANTHROPIC_API_KEY=... and/or GEMINI_API_KEY=...
 ```
 
-`AnthropicPlanner` is only needed for `--planner anthropic`; every other
-command works with neither the extra installed nor a key set.
+Gemini has a free tier with no credit card required — get a key at
+https://aistudio.google.com/apikey. Note the free tier is rate-limited (a
+handful of requests per minute depending on the model), so running
+`evaluate` across all 12 tasks back-to-back may hit a `429` on a couple of
+tasks; that's an API quota, not a bug — those tasks are recorded as
+`planning_error` and the rest still complete. Use `--delay-seconds` (e.g.
+`--delay-seconds 13` for Gemini's 5-requests-per-minute free tier) to pace
+requests and avoid this. These planners are only needed for
+`--planner anthropic` / `--planner gemini`; every other command works with
+neither the extra installed nor a key set.
 
 ## Getting started in GitHub Codespaces
 
@@ -137,6 +148,8 @@ python -m geniac_cap.cli evaluate --planner rule-based
 python -m geniac_cap.cli evaluate --planner feedback
 python -m geniac_cap.cli evaluate --planner feedback --no-feedback
 python -m geniac_cap.cli evaluate --planner anthropic
+python -m geniac_cap.cli evaluate --planner gemini
+python -m geniac_cap.cli evaluate --planner gemini --delay-seconds 13
 ```
 
 (If you installed with `pip install -e .`, `geniac-cap ...` also works as a
