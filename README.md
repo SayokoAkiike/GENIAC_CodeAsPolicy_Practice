@@ -1,9 +1,3 @@
-# geniac-cap-practice
-
-自然言語のロボット操作指示を構造化アクション列に変換し、軽量な仮想環境で実行・評価する、Code-as-Policy形式の練習用プロジェクトです。GENIAC-PRIZE テーマ2を想定した個人の学習プロジェクトであり、GENIACの公式実装・公式ベンチマークではありません。
-
----
-
 ## Overview
 
 This is an independent practice project inspired by the Code-as-Policy
