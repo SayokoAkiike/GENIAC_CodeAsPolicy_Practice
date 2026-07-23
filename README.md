@@ -296,13 +296,19 @@ clinical actions.
 
 Tracks changes made under <a href="docs/model-improvement-roadmap.md">the zero-budget/no-GPU model improvement roadmap</a>, in adoption order.
 
-| # | Change | PR/Branch | Date | Result |
-|---|---|---|---|---|
-| 0 | Evaluation tracking (`--compare-to`/`--label`) | `d8f0794` | 2026-07-23 | infra only; verified diff logic reports 0.00% on a same-vs-same run |
-| 1 | Planner cascade (`--cascade`) | `772882b` | 2026-07-23 | 12/14 tasks solved by tier 1 alone; LLM tier only needed for 2/14 (~86% fewer LLM calls) |
-| 2 | Synthetic task augmentation (`generate-tasks`) | `d0b522a` | 2026-07-23 | 16 generated tasks reproduced task_013/014's exact failure pattern (50% success, split cleanly by task type) |
-| 3 | Vocabulary distillation (`harvest-vocabulary`) | `e6b1aea` | 2026-07-23 | 9/11 probe instructions correctly flagged as needing harvest; logic verified with a fake client |
-| 4 | Prompt hill-climbing (`hill-climb-prompt`) | `968bd30` | 2026-07-23 | simulated LLM: `container_reminder` mutation raised task_013 success 0%→100% |
-| 5 | Contextual bandit (`bandit-cascade`) | `2ba18da` | 2026-07-23 | learned `rule-based` alone for easy/medium, `rule-based→smart-llm` for hard (0.964 vs 0.5 avg reward) |
+**Headline metric:** success rate across all 14 sample tasks (`sample_tasks.yaml`), the one number tracked consistently across every row so they're comparable at a glance. `RuleBasedPlanner` alone has been flat at **12/14 (85.71%)** throughout — none of the steps below change what it can solve, only *how efficiently/reliably the LLM tier is reached and used*. Rows marked 🧪 used a fake/mock client (no real API call, sandbox-only logic check); rows marked ✅ were confirmed against a real API.
+
+| # | Change | PR/Branch | Date | 14-task success rate | Result detail |
+|---|---|---|---|---|---|
+| — | Baseline: RuleBasedPlanner alone | `1c77297` | 2026-07-23 | ✅ 12/14 (85.71%) | reference point; fails task_013 (container) and task_014 (two-object) by construction |
+| 0 | Evaluation tracking (`--compare-to`/`--label`) | `d8f0794` | 2026-07-23 | 12/14 (85.71%, unchanged) | infra only, no planner change; verified the diff tool itself reports 0.00% on a same-vs-same run |
+| 1 | Planner cascade (`--cascade`) | `772882b` | 2026-07-23 | 🧪 12/14 (85.71%, unchanged) | mock-llm tier tested; real gain is efficiency, not success rate: only 2/14 tasks ever reach the 2nd tier (~86% fewer LLM calls vs. calling an LLM on all 14) |
+| 2 | Synthetic task augmentation (`generate-tasks`) | `d0b522a` | 2026-07-23 | N/A (separate 16-task synthetic set) | 8/16 (50%), split cleanly single-object 100% / two-object 0% / container 0% — validates the generator, not a change to the 14-task score |
+| 3 | Vocabulary distillation (`harvest-vocabulary`) | `e6b1aea` | 2026-07-23 | N/A (not yet merged) | 9/11 probes correctly flagged; proposed synonyms not yet reviewed/merged, so 14-task score is still 12/14 |
+| 4 | Prompt hill-climbing (`hill-climb-prompt`) | `968bd30` | 2026-07-23 | 🧪 N/A (single-task demo only) | simulated LLM on task_013 alone: 0%→100% after `container_reminder`; not yet run against the full 14-task set |
+| 5 | Contextual bandit (`bandit-cascade`) | `2ba18da` | 2026-07-23 | 🧪 12/14 (85.71%, unchanged) | fake "smart-llm" tier tested; learned correctly which contexts need the 2nd tier, but success rate itself matches the cascade baseline |
+| — | **Best real-API result so far (not yet run as one pass)** | — | 2026-07-23 | ✅→✅ 14/14 (100%) *projected* | real Gemini solved all 12 single-object tasks in one run, **and separately** solved task_013 + task_014 in another run — never combined into a single 14-task pass yet |
+
+**Honest gap:** most of the improvement steps above were validated with fake/mock clients today (no API budget left after the Phase 4 real-API testing hit daily quota). The natural next step is a single real `evaluate --cascade "rule-based,gemini" --delay-seconds 13` run across all 14 tasks once quota resets, to turn that last "projected 100%" row into a real, single-run number.
 
 </details>
