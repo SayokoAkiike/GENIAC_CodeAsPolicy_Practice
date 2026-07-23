@@ -182,3 +182,32 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
 - **Next action:** use this for every subsequent step
   (1-5) in docs/model-improvement-roadmap.md, pasting the printed row into
   README after each change.
+
+## Step 1 of the model-improvement roadmap: planner cascade
+
+- **Date:** 2026-07-23
+- **Commit:** (fill in after pushing)
+- **Change:** Added `geniac_cap.evaluation.cascade.run_single_task_cascade`
+  and `Evaluator.evaluate_cascade`, exposed via `--cascade
+  "rule-based,gemini"` on `run-task` / `evaluate`. Tries planners in order
+  per task, stopping at the first that actually achieves the goal.
+- **Dataset:** all 14 sample tasks, cascade `rule-based -> mock-llm` (a
+  free stand-in for `gemini`/`anthropic` used here since no real API key is
+  available in this environment; the routing logic is identical regardless
+  of which planner is in the second tier)
+- **Result:** 12/14 tasks (85.7%) were solved by tier 1 (RuleBasedPlanner)
+  alone -- tier 2 was invoked for only 2/14 tasks (task_013, task_014, the
+  two tasks documented as beyond RuleBasedPlanner's structural
+  limitations). Overall success rate: 85.71% (identical to running
+  RuleBasedPlanner alone, since mock-llm's fallback logic also delegates to
+  RuleBasedPlanner for unrecognized instructions in this sandbox -- the
+  same *routing* would apply with a genuinely more capable tier-2 planner).
+- **Interpretation:** with a real LLM as tier 2 (e.g. Gemini), this
+  cascade would cut LLM API calls by ~85.7% compared to running the LLM
+  planner on all 14 tasks, while only needing the LLM for the tasks that
+  actually require it. Directly mitigates the free-tier daily quota
+  exhaustion hit during Phase 4 testing.
+- **Next action:** re-run `--cascade "rule-based,gemini"` once daily quota
+  allows, to confirm tier 2 (real Gemini) actually solves task_013/014 when
+  reached (already independently confirmed in the Phase 4 log above), and
+  record the real API-call count saved.

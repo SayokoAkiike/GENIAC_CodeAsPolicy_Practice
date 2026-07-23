@@ -15,6 +15,7 @@ from rich.table import Table
 
 from geniac_cap.config import settings
 from geniac_cap.environment.toy_robot import ToyRobotEnv
+from geniac_cap.evaluation.cascade import run_single_task_cascade
 from geniac_cap.evaluation.evaluator import Evaluator, run_single_task
 from geniac_cap.evaluation.metrics import SummaryLoadError, compare_summaries, load_summary
 from geniac_cap.exceptions import GeniacCapError
@@ -57,6 +58,18 @@ def _make_perception(name: str, vision_provider: str) -> BasePerception:
     if name == "vlm":
         return VLMPerception(provider=vision_provider)
     raise typer.BadParameter(f"Unknown perception '{name}'. Choose from: ground-truth, vlm")
+
+
+def _make_cascade(spec: str) -> list[BasePlanner]:
+    """Parse a comma-separated '--cascade' spec like 'rule-based,gemini' into
+    planner instances, in the given fallback order (see Step 1 of
+    docs/model-improvement-roadmap.md).
+    """
+
+    names = [name.strip() for name in spec.split(",") if name.strip()]
+    if not names:
+        raise typer.BadParameter("--cascade must list at least one planner name")
+    return [_make_planner(name) for name in names]
 
 
 @app.callback()
@@ -130,6 +143,14 @@ def render_scene_cmd(
 def run_task(
     task_id: str = typer.Option(..., "--task-id"),
     planner: str = typer.Option("rule-based", "--planner", help=f"One of: {list(_PLANNERS)}"),
+    cascade: str = typer.Option(
+        None,
+        "--cascade",
+        help=(
+            "Comma-separated planner names tried in order, stopping at the "
+            "first success, e.g. 'rule-based,gemini'. Overrides --planner."
+        ),
+    ),
     perception: str = typer.Option(
         "ground-truth", "--perception", help="One of: ground-truth, vlm"
     ),
@@ -145,15 +166,22 @@ def run_task(
         console.print(f"[red]Error:[/red] {escape(str(exc))}")
         raise typer.Exit(code=1) from exc
 
-    planner_obj = _make_planner(planner)
     perception_obj = _make_perception(perception, vision_provider)
     executor = SafeExecutor()
-    outcome = run_single_task(task, planner_obj, executor, perception=perception_obj)
+
+    if cascade:
+        planners = _make_cascade(cascade)
+        outcome = run_single_task_cascade(task, planners, executor, perception=perception_obj)
+        planner_label = "cascade(" + "->".join(p.name for p in planners) + ")"
+    else:
+        planner_obj = _make_planner(planner)
+        outcome = run_single_task(task, planner_obj, executor, perception=perception_obj)
+        planner_label = outcome.planner_name
 
     status = "[green]SUCCESS[/green]" if outcome.success else "[red]FAILED[/red]"
     console.print(f"Task [bold]{task.task_id}[/bold]: {status}")
     console.print(f"  instruction: {task.instruction}")
-    console.print(f"  planner: {outcome.planner_name}")
+    console.print(f"  planner: {planner_label} (solved by: {outcome.planner_name})")
     console.print(f"  perception: {perception_obj.name}")
     console.print(f"  steps: {outcome.steps}")
     console.print(f"  replanned: {outcome.replanned}")
@@ -199,6 +227,14 @@ def demo() -> None:
 @app.command("evaluate")
 def evaluate(
     planner: str = typer.Option("rule-based", "--planner", help=f"One of: {list(_PLANNERS)}"),
+    cascade: str = typer.Option(
+        None,
+        "--cascade",
+        help=(
+            "Comma-separated planner names tried in order per task, stopping "
+            "at the first success, e.g. 'rule-based,gemini'. Overrides --planner."
+        ),
+    ),
     tasks_file: str = typer.Option(
         None, "--tasks-file", help="Optional path to a custom tasks YAML"
     ),
@@ -238,7 +274,6 @@ def evaluate(
     """Evaluate a planner across all sample tasks and save JSON/CSV results."""
 
     tasks = load_tasks(tasks_file)
-    planner_obj = _make_planner(planner)
     perception_obj = _make_perception(perception, vision_provider)
     evaluator = Evaluator()
 
@@ -250,13 +285,24 @@ def evaluate(
             console.print(f"[red]Error:[/red] {escape(str(exc))}")
             raise typer.Exit(code=1) from exc
 
-    summary = evaluator.evaluate(
-        tasks,
-        planner_obj,
-        allow_feedback=not no_feedback,
-        delay_seconds=delay_seconds,
-        perception=perception_obj,
-    )
+    if cascade:
+        planners = _make_cascade(cascade)
+        summary = evaluator.evaluate_cascade(
+            tasks,
+            planners,
+            allow_feedback=not no_feedback,
+            delay_seconds=delay_seconds,
+            perception=perception_obj,
+        )
+    else:
+        planner_obj = _make_planner(planner)
+        summary = evaluator.evaluate(
+            tasks,
+            planner_obj,
+            allow_feedback=not no_feedback,
+            delay_seconds=delay_seconds,
+            perception=perception_obj,
+        )
     json_path, csv_path = evaluator.save_results(summary)
 
     table = Table(

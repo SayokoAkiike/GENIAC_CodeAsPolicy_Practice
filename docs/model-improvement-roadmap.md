@@ -34,7 +34,8 @@ compact log at the bottom of `README.md`.
   See `geniac_cap.evaluation.metrics.compare_summaries` /
   `SummaryComparison.as_readme_row`.
 
-### Step 1 — Planner cascade (cost-aware routing)
+### Step 1 — Planner cascade (cost-aware routing) ✅ implemented
+
 Try `RuleBasedPlanner` first (free, instant, deterministic); only call a
 paid/quota-limited LLM planner when it fails. This is the client-side
 analog of "inference-efficiency tricks" — it can't make the model faster,
@@ -44,6 +45,17 @@ but it can avoid calling it unnecessarily.
 - **Direct benefit:** reduces exposure to free-tier daily quotas (e.g. the
   Gemini `GenerateRequestsPerDayPerProjectPerModel-FreeTier` limit hit
   during Phase 4 testing)
+- **Implementation:** `geniac_cap.evaluation.cascade.run_single_task_cascade`
+  and `Evaluator.evaluate_cascade` try a list of planners per task, in
+  order, stopping at the first that actually achieves the goal (not just
+  the first that runs without error — see the design note below). Exposed
+  via `--cascade "rule-based,gemini"` on `run-task` / `evaluate`.
+- **Design note:** this lives in the Evaluator layer, not as a
+  `BasePlanner` subclass, because only the Evaluator knows the task's
+  `goal_state` at the point a cascade decision needs to be made —
+  `BasePlanner.plan()` doesn't receive it. A planner-level cascade would
+  only be able to check "did this raise an exception," missing failures
+  like `goal_not_achieved` (e.g. task_014's two-object case).
 
 ### Step 2 — Synthetic task augmentation
 Programmatically generate additional task variations (new object/location

@@ -191,6 +191,44 @@ class Evaluator:
             )
         return compute_summary(planner.name, outcomes)
 
+    def evaluate_cascade(
+        self,
+        tasks: list[TaskDefinition],
+        planners: list[BasePlanner],
+        allow_feedback: bool = True,
+        delay_seconds: float = 0.0,
+        perception: BasePerception | None = None,
+    ) -> EvaluationSummary:
+        """Run every task through a planner cascade (Step 1 of
+        docs/model-improvement-roadmap.md): tries ``planners`` in order per
+        task, stopping at the first one that succeeds, so expensive/quota-
+        limited planners are only invoked when a cheaper one fails.
+
+        The returned summary's ``planner_name`` is a label describing the
+        whole cascade (e.g. "cascade(rule-based->gemini)"), since each task
+        may have been solved by a different tier.
+        """
+
+        # Local import to avoid a circular import (cascade.py imports
+        # run_single_task from this module).
+        from geniac_cap.evaluation.cascade import run_single_task_cascade
+
+        cascade_label = "cascade(" + "->".join(p.name for p in planners) + ")"
+        outcomes = []
+        for i, task in enumerate(tasks):
+            if i > 0 and delay_seconds > 0:
+                time.sleep(delay_seconds)
+            outcomes.append(
+                run_single_task_cascade(
+                    task,
+                    planners,
+                    self.executor,
+                    allow_feedback=allow_feedback,
+                    perception=perception,
+                )
+            )
+        return compute_summary(cascade_label, outcomes)
+
     def save_results(self, summary: EvaluationSummary) -> tuple[Path, Path]:
         """Save ``summary`` as both JSON and CSV, timestamped, under results_dir.
 
