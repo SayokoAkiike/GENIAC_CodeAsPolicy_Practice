@@ -1,16 +1,11 @@
 # geniac-cap-practice
 
-自然言語のロボット操作指示を構造化アクション列に変換し、軽量な仮想環境で実行・評価する、Code-as-Policy形式の練習用プロジェクトです。GENIAC-PRIZE テーマ2を想定した個人の学習プロジェクトであり、GENIACの公式実装・公式ベンチマークではありません。
-
----
-
 ## Overview
 
-This is an independent practice project inspired by the Code-as-Policy
-style tasks expected in GENIAC-PRIZE Theme 2. **It is not an official
-GENIAC project or benchmark implementation.**
+This is an independent practice project exploring Code-as-Policy style
+tasks: turning natural-language instructions into robot behavior.
 
-It turns a natural-language instruction (Japanese or simple English) into a
+It turns a natural-language instruction (English or Japanese) into a
 structured, whitelisted sequence of robot actions, executes that sequence
 against a small in-memory "Toy Robot Environment," checks whether the goal
 was reached, and reports success/failure metrics across a batch of tasks.
@@ -42,9 +37,8 @@ code generation/execution is left as a documented future extension point
   `RuleBasedPlanner`; two (`task_013`, a container task, and `task_014`, a
   two-object task) are intentionally beyond it, as a comparison point
   against LLM-backed planners — see `docs/experiment-log.md`
-- **RuleBasedPlanner**: works without any API key; handles Japanese and
-  simple English phrasing variation ("運ぶ/置く/移動する/移す" /
-  "move/carry/place/put")
+- **RuleBasedPlanner**: works without any API key; handles English and
+  Japanese phrasing variation for move/carry/place-style verbs
 - **BasePlanner interface** so `OpenAIPlanner` / `LocalModelPlanner` can be
   added later without touching the executor or evaluator
 - **AnthropicPlanner**: calls the Anthropic API to generate a plan as a
@@ -188,7 +182,7 @@ shorter alias for `python -m geniac_cap.cli ...`.)
 
 ```bash
 $ python -m geniac_cap.cli demo
-Instruction: 赤いブロックを青い棚に置いてください
+Instruction: Move the red block to the blue shelf
 
 Generated plan:
   0. move_to({'location': 'table'})
@@ -233,13 +227,14 @@ python -m pytest
 pytest
 ```
 
-64 tests cover the environment (including container open/close
+77 tests cover the environment (including container open/close
 preconditions), executor whitelist/validation, planner behavior (all 12
 single-object sample tasks, plus dedicated tests documenting why
 RuleBasedPlanner can't solve the 2 harder ones), the feedback/replanning
-loop (now shared by RuleBasedPlanner-based `FeedbackPlanner` and the LLM
-planners), the evaluator's metrics and JSON/CSV output, and the task
-loader.
+loop (shared by RuleBasedPlanner-based `FeedbackPlanner` and the LLM
+planners), perception (`GroundTruthPerception`, `VLMPerception`, the scene
+renderer), the evaluator's metrics and JSON/CSV output, the CLI, and the
+task loader.
 
 ## Current constraints
 
@@ -256,17 +251,13 @@ loader.
 ## Roadmap
 
 See [`docs/roadmap.md`](docs/roadmap.md) for the full phase-by-phase plan
-(external LLM planner → execution feedback improvements → vision/VLM →
+(external LLM planners → execution feedback improvements → vision/VLM →
 simulator integration → model comparison/fine-tuning → healthcare tasks).
 
 ## Disclaimer
 
-This is an independent, personal practice project. It is not affiliated
-with, endorsed by, or an official submission to GENIAC-PRIZE. Any notes
-about the competition in `docs/competition-notes.md` are informal working
-hypotheses, not authoritative competition information — please refer to
-official GENIAC materials for anything time-sensitive or authoritative.
-Healthcare-adjacent sample tasks are limited to object transport /
+This is an independent, personal practice project, not a production
+system. Healthcare-adjacent sample tasks are limited to object transport /
 environment tidying and never model medication administration or other
 clinical actions.
 

@@ -18,6 +18,11 @@ from geniac_cap.exceptions import PlanningError
 from geniac_cap.perception.ground_truth import GroundTruthPerception
 from geniac_cap.perception.vlm_perception import VLMPerception
 
+# VLMPerception.perceive() always renders the scene first (even with an
+# injected fake API client), so it needs Pillow (the 'vision' extra). Skip
+# cleanly rather than fail when it isn't installed, matching test_renderer.py.
+pytest.importorskip("PIL", reason="Pillow (the 'vision' extra) is required for these tests")
+
 
 def _env() -> ToyRobotEnv:
     return ToyRobotEnv(

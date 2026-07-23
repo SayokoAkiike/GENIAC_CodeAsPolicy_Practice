@@ -164,8 +164,7 @@ def run_task(
 def demo() -> None:
     """Run a short end-to-end demo: one task, rule-based planner, printed trace."""
 
-    tasks = load_tasks()
-    task = tasks[0]
+    task = get_task_by_id("task_006")  # "Move the red block to the blue shelf"
     console.rule("[bold]Code-as-Policy Demo[/bold]")
     console.print(f"Instruction: [italic]{task.instruction}[/italic]")
 
