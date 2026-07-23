@@ -234,3 +234,31 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
   `--container` count as a bigger benchmark for Step 4 (prompt
   hill-climbing) and future LLM-vs-RuleBasedPlanner comparisons, so results
   aren't based on just 2 hand-authored examples.
+
+## Step 3 of the model-improvement roadmap: vocabulary distillation
+
+- **Date:** 2026-07-23
+- **Commit:** (fill in after pushing)
+- **Change:** Added `geniac_cap.planners.vocabulary_distiller`
+  (`VocabularyDistiller`, `filter_probes_needing_harvest`,
+  `default_probe_instructions`) and `harvest-vocabulary --provider
+  anthropic|gemini`. Filters a built-in probe list to instructions
+  RuleBasedPlanner can't parse, asks an LLM which known object/location
+  each refers to, and prints/saves a human-reviewable proposal for
+  OBJECT_SYNONYMS/LOCATION_SYNONYMS. Nothing is auto-applied to source.
+- **Dataset:** 11 built-in probe instructions against sample_tasks.yaml's
+  vocabulary
+- **Result (filtering logic only, no real API key available in this
+  environment):** 9/11 probes correctly identified as needing harvest (2
+  were already resolvable, incidentally, via substring quirks in the
+  existing matcher -- e.g. "bookshelf" contains the literal substring
+  "book"). Verified end-to-end with a fake client that harvest() correctly
+  proposes new synonym entries and skips ones already known.
+- **Interpretation:** the filtering step means this only ever spends API
+  calls on genuine gaps, keeping cost proportional to what's actually
+  missing rather than the full probe list.
+- **Next action:** run `harvest-vocabulary` with a real API key, review the
+  proposed snippet, and manually merge accepted entries into
+  `planners/rule_based.py`'s OBJECT_SYNONYMS/LOCATION_SYNONYMS; then
+  re-run the 9 probe instructions through RuleBasedPlanner to confirm they
+  now succeed.

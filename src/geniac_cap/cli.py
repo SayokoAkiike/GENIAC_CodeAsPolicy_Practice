@@ -6,6 +6,7 @@ package and run ``geniac-cap --help``.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import typer
@@ -29,7 +30,12 @@ from geniac_cap.planners.base import BasePlanner, PlanningContext
 from geniac_cap.planners.feedback import FeedbackPlanner
 from geniac_cap.planners.gemini_planner import GeminiPlanner
 from geniac_cap.planners.mock_llm import MockLLMPlanner
-from geniac_cap.planners.rule_based import RuleBasedPlanner
+from geniac_cap.planners.rule_based import LOCATION_SYNONYMS, OBJECT_SYNONYMS, RuleBasedPlanner
+from geniac_cap.planners.vocabulary_distiller import (
+    VocabularyDistiller,
+    default_probe_instructions,
+    filter_probes_needing_harvest,
+)
 from geniac_cap.tasks.generator import generate_tasks
 from geniac_cap.tasks.loader import get_task_by_id, load_tasks, save_tasks_to_yaml
 from geniac_cap.utils.logging import configure_logging, get_logger
@@ -95,6 +101,79 @@ def list_tasks() -> None:
     for task in tasks:
         table.add_row(task.task_id, task.category.value, task.difficulty.value, task.instruction)
     console.print(table)
+
+
+@app.command("harvest-vocabulary")
+def harvest_vocabulary(
+    provider: str = typer.Option(
+        "anthropic", "--provider", help="Vision/LLM provider to ask: anthropic or gemini"
+    ),
+    output: str = typer.Option(
+        "results/vocabulary_proposal.json", "--output", help="Where to save the proposal JSON"
+    ),
+) -> None:
+    """Harvest new RuleBasedPlanner vocabulary via an LLM (Step 3:
+    docs/model-improvement-roadmap.md).
+
+    Runs a small built-in set of paraphrases through RuleBasedPlanner,
+    skips the ones it already handles, and asks an LLM to identify which
+    known object/location the rest refer to. Prints a human-reviewable
+    proposal for OBJECT_SYNONYMS / LOCATION_SYNONYMS -- nothing is applied
+    to source code automatically.
+    """
+
+    known_objects = sorted(OBJECT_SYNONYMS.keys())
+    known_locations = sorted(LOCATION_SYNONYMS.keys())
+    probes = default_probe_instructions()
+    needs_harvest = filter_probes_needing_harvest(probes, known_objects, known_locations)
+
+    console.print(
+        f"{len(needs_harvest)}/{len(probes)} probe instruction(s) need harvesting "
+        f"(the rest RuleBasedPlanner already handles)."
+    )
+    if not needs_harvest:
+        console.print("Nothing to harvest.")
+        return
+
+    try:
+        distiller = VocabularyDistiller(provider=provider)
+        proposal = distiller.harvest(
+            needs_harvest,
+            known_objects,
+            known_locations,
+            existing_object_synonyms=OBJECT_SYNONYMS,
+            existing_location_synonyms=LOCATION_SYNONYMS,
+        )
+    except GeniacCapError as exc:
+        console.print(f"[red]Error:[/red] {escape(str(exc))}")
+        raise typer.Exit(code=1) from exc
+
+    if proposal.is_empty():
+        if proposal.unresolved_instructions:
+            console.print("No new vocabulary proposed (all probes were unresolved -- see below).")
+        else:
+            console.print("No new vocabulary proposed (LLM found nothing new).")
+    else:
+        console.print(escape(proposal.as_python_snippet()))
+
+    if proposal.unresolved_instructions:
+        console.print(f"\n{len(proposal.unresolved_instructions)} instruction(s) unresolved.")
+
+    output_path = Path(output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(
+            {
+                "object_synonyms": proposal.object_synonyms,
+                "location_synonyms": proposal.location_synonyms,
+                "unresolved_instructions": proposal.unresolved_instructions,
+            },
+            indent=2,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    console.print(f"\nSaved proposal to: {output_path}")
 
 
 @app.command("generate-tasks")

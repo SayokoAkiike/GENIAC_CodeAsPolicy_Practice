@@ -81,13 +81,21 @@ novel data — see the caveat below.
   doesn't teach any planner something new; RuleBasedPlanner's structural
   limits (single-object, no containers) are unaffected
 
-### Step 3 — Distillation into RuleBasedPlanner's rule tables
+### Step 3 — Distillation into RuleBasedPlanner's rule tables ✅ implemented
+
 Use a modest number of LLM calls to harvest correct plans for phrasing
 variations RuleBasedPlanner doesn't yet recognize, then fold the new
 vocabulary into `OBJECT_SYNONYMS` / `LOCATION_SYNONYMS`. This is symbolic
 distillation (LLM output → static rules), not neural distillation.
 - **Cost:** a handful of API calls (one-time harvesting run)
 - **Complexity:** low
+- **Implementation:** `geniac_cap.planners.vocabulary_distiller` filters a
+  built-in probe list down to instructions RuleBasedPlanner currently fails
+  on (`filter_probes_needing_harvest`, so no API calls are wasted on
+  phrasing it already handles), asks an LLM which known object/location
+  each refers to, and outputs a human-reviewable proposal (JSON + a
+  ready-to-paste snippet) -- nothing is auto-applied to source. CLI:
+  `harvest-vocabulary --provider anthropic|gemini`.
 - **Limit:** only fixes vocabulary gaps, not RuleBasedPlanner's structural
   limits (multi-object tasks, containers)
 

@@ -41,7 +41,11 @@ code generation/execution is left as a documented future extension point
   two-object, container) for larger-scale evaluation — see
   `docs/model-improvement-roadmap.md`
 - **RuleBasedPlanner**: works without any API key; handles English and
-  Japanese phrasing variation for move/carry/place-style verbs
+  Japanese phrasing variation for move/carry/place-style verbs.
+  `harvest-vocabulary` can use an LLM to propose new
+  `OBJECT_SYNONYMS`/`LOCATION_SYNONYMS` entries for phrasing it doesn't yet
+  recognize (human-reviewed, never auto-applied — see
+  `docs/model-improvement-roadmap.md`)
 - **BasePlanner interface** so `OpenAIPlanner` / `LocalModelPlanner` can be
   added later without touching the executor or evaluator
 - **AnthropicPlanner**: calls the Anthropic API to generate a plan as a
@@ -76,7 +80,7 @@ code generation/execution is left as a documented future extension point
   ".[vision]"` for the renderer (Pillow) plus `.[llm]` for the vision API
   call — every other command works without either installed
 - **CLI** (Typer): `demo`, `run-task`, `evaluate`, `list-tasks`, `show-task`
-- **97 pytest tests**, all passing; ruff-clean; GitHub Actions CI
+- **105 pytest tests**, all passing; ruff-clean; GitHub Actions CI
 - **Codespaces-ready** via `.devcontainer/devcontainer.json`
 
 ## Architecture
@@ -109,7 +113,7 @@ geniac-cap-practice/
 │   ├── evaluation/           # Evaluator, metrics
 │   ├── tasks/                 # loader.py, sample_tasks.yaml
 │   └── utils/logging.py
-├── tests/                     # 97 pytest tests
+├── tests/                     # 105 pytest tests
 ├── pyproject.toml
 └── README.md
 ```
@@ -185,6 +189,7 @@ python -m geniac_cap.cli evaluate --planner rule-based --compare-to results/eval
 python -m geniac_cap.cli evaluate --cascade "rule-based,gemini" --delay-seconds 13
 python -m geniac_cap.cli generate-tasks --single 10 --two-object 5 --container 5
 python -m geniac_cap.cli evaluate --planner rule-based --tasks-file results/synthetic_tasks.yaml
+python -m geniac_cap.cli harvest-vocabulary --provider gemini
 ```
 
 (If you installed with `pip install -e .`, `geniac-cap ...` also works as a
