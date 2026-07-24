@@ -437,3 +437,56 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
   holds at larger scale; re-run Steps 3 (vocabulary distillation with a
   real key) and 5 (bandit) for real now that a working 3-tier fallback
   exists to avoid being blocked by Gemini's quota mid-run.
+
+## Step 3 real verification: vocabulary distillation via Groq, reviewed and merged
+
+- **Date:** 2026-07-24
+- **Commit:** (fill in after pushing)
+- **Command:** `harvest-vocabulary --provider groq`
+- **Result:** 7/9 unresolved probes resolved into new synonyms (real Groq
+  output, not simulated):
+  - `red_block` += "crimson block"
+  - `cup` += "mug"
+  - `water_bottle` += "flask"
+  - `medicine_box` += "pill box"
+  - `notebook` += "notepad"
+  - `documents` += "paperwork"
+  - `kitchen` (location) += "kitchenette"
+- **Review outcome:** all 7 proposals were reasonable synonyms of the
+  correct object/location and were manually merged into
+  `planners/rule_based.py`'s `OBJECT_SYNONYMS`/`LOCATION_SYNONYMS`.
+  Verified: RuleBasedPlanner now correctly parses all 7 new phrases (new
+  regression test `test_rule_based_planner_recognizes_vocabulary_harvested_via_groq`),
+  and the original `sample_tasks.yaml` baseline is unchanged (12/14,
+  85.71%) -- adding vocabulary doesn't touch RuleBasedPlanner's structural
+  limits.
+- **Interpretation:** this is the first fully-closed loop for Step 3:
+  propose (real LLM call) -> human review -> merge -> re-verify. The
+  harvested phrases were genuinely useful and low-risk to merge.
+
+## Step 5 real verification: contextual bandit (rule-based vs. rule-based->groq)
+
+- **Date:** 2026-07-24
+- **Commit:** (fill in after pushing)
+- **Command:** `bandit-cascade --arms "rule-based;rule-based,groq" --tasks-file benchmarks/train_mini.yaml --seed 1`
+- **Result:** 16/18 (88.89%) success rate, average 5.50 steps. Learned
+  best arm per context: `easy` -> `rule-based` (correct — cheapest option,
+  ties broken toward it), `hard` -> `rule-based->groq` (correct — the
+  cascade is needed for two-object/container tasks).
+- **Real failure case:** `synth_container_004` ("Open the supply crate and
+  put the red ring inside") failed both the initial GroqPlanner attempt
+  *and* its one feedback-driven replan, both times with
+  `object_not_found: 'supply_crate'` -- GroqPlanner referenced the
+  container name as if it were a pickable object, and the replan didn't
+  fix it. This is genuine evidence that llama-3.3-70b-versatile
+  occasionally repeats the same mistake even after feedback, unlike the
+  earlier `synth_container_006` case (Phase: cascade verification log
+  above) where a single replan did fix an identical-looking mistake.
+- **Interpretation:** the bandit's per-context learning is confirmed
+  correct with a real (non-simulated) second tier. The one failure is
+  useful, unglamorous evidence for docs/rigorous-verification-plan.md's
+  point that a single retry isn't always sufficient -- worth revisiting
+  Phase 3's "extend beyond a single retry" item in docs/roadmap.md.
+- **Next action:** investigate whether a more specific feedback message
+  (e.g. explicitly naming the container vs. object distinction) improves
+  the replan's success rate on this failure mode.

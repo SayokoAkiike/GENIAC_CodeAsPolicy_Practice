@@ -41,17 +41,17 @@ _TRANSPORT_VERB_PATTERN = re.compile(
 
 # object_name -> extra Japanese/English surface forms to match in free text.
 OBJECT_SYNONYMS: dict[str, list[str]] = {
-    "red_block": ["赤いブロック", "赤ブロック", "red block"],
+    "red_block": ["赤いブロック", "赤ブロック", "red block", "crimson block"],
     "green_block": ["緑のブロック", "緑ブロック", "green block"],
-    "cup": ["カップ", "コップ"],
+    "cup": ["カップ", "コップ", "mug"],
     "bottle": ["ボトル"],
-    "water_bottle": ["水のボトル", "水ボトル", "water bottle"],
+    "water_bottle": ["水のボトル", "水ボトル", "water bottle", "flask"],
     "towel": ["タオル"],
-    "medicine_box": ["薬箱", "薬のケース", "medicine box"],
+    "medicine_box": ["薬箱", "薬のケース", "medicine box", "pill box"],
     "book": ["本"],
     "plate": ["皿", "お皿"],
-    "notebook": ["ノート"],
-    "documents": ["書類", "ドキュメント"],
+    "notebook": ["ノート", "notepad"],
+    "documents": ["書類", "ドキュメント", "paperwork"],
 }
 
 # location_name -> extra Japanese surface forms.
@@ -60,7 +60,7 @@ LOCATION_SYNONYMS: dict[str, list[str]] = {
     "tray": ["トレイ"],
     "table": ["テーブル", "机"],
     "desk": ["机"],
-    "kitchen": ["キッチン", "台所"],
+    "kitchen": ["キッチン", "台所", "kitchenette"],
     "patient_room": ["患者室"],
     "bedside": ["ベッド横", "ベッドサイド", "ベッド脇"],
     "linen_closet": ["リネン庫", "リネンクローゼット"],

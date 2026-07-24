@@ -45,6 +45,40 @@ def test_rule_based_planner_plans_basic_english_task():
     assert plan.steps[-1].args["target_location"] == "blue_shelf"
 
 
+def test_rule_based_planner_recognizes_vocabulary_harvested_via_groq():
+    """Regression test for the 7 synonyms harvested for real via
+    `harvest-vocabulary --provider groq` and merged into rule_based.py on
+    2026-07-24 -- see docs/experiment-log.md.
+    """
+
+    context = PlanningContext(
+        objects=["red_block", "cup", "water_bottle", "medicine_box", "notebook", "documents"],
+        locations=["table", "blue_shelf", "kitchen"],
+        object_locations={
+            "red_block": "table",
+            "cup": "table",
+            "water_bottle": "table",
+            "medicine_box": "table",
+            "notebook": "table",
+            "documents": "table",
+        },
+        robot_location="table",
+    )
+    cases = [
+        ("Move the crimson block to the blue shelf", "red_block", "blue_shelf"),
+        ("Move the mug to the blue shelf", "cup", "blue_shelf"),
+        ("Move the flask to the blue shelf", "water_bottle", "blue_shelf"),
+        ("Move the pill box to the blue shelf", "medicine_box", "blue_shelf"),
+        ("Move the notepad to the blue shelf", "notebook", "blue_shelf"),
+        ("Move the paperwork to the blue shelf", "documents", "blue_shelf"),
+        ("Move the red block to the kitchenette", "red_block", "kitchen"),
+    ]
+    for instruction, expected_object, expected_location in cases:
+        plan = RuleBasedPlanner().plan(instruction, context)
+        assert plan.steps[1].args["object_name"] == expected_object, instruction
+        assert plan.steps[-1].args["target_location"] == expected_location, instruction
+
+
 def test_rule_based_planner_raises_planning_error_for_unsupported_instruction():
     context = PlanningContext(objects=[], locations=[], object_locations={}, robot_location="table")
     with pytest.raises(PlanningError):
