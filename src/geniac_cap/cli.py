@@ -30,6 +30,7 @@ from geniac_cap.planners.anthropic_planner import AnthropicPlanner
 from geniac_cap.planners.base import BasePlanner, PlanningContext
 from geniac_cap.planners.feedback import FeedbackPlanner
 from geniac_cap.planners.gemini_planner import GeminiPlanner
+from geniac_cap.planners.groq_planner import GroqPlanner
 from geniac_cap.planners.llm_prompts import ACTION_PLAN_SYSTEM_PROMPT
 from geniac_cap.planners.mock_llm import MockLLMPlanner
 from geniac_cap.planners.prompt_hillclimb import DEFAULT_MUTATIONS, hill_climb
@@ -54,6 +55,7 @@ _PLANNERS: dict[str, type[BasePlanner] | None] = {
     "mock-llm": MockLLMPlanner,
     "anthropic": AnthropicPlanner,
     "gemini": GeminiPlanner,
+    "groq": GroqPlanner,
 }
 
 
@@ -204,12 +206,19 @@ def hill_climb_prompt(
     planners/llm_prompts.py.
     """
 
-    if planner not in ("anthropic", "gemini"):
-        raise typer.BadParameter("--planner must be 'anthropic' or 'gemini' for hill-climb-prompt")
+    _HILL_CLIMB_PLANNERS = {
+        "anthropic": AnthropicPlanner,
+        "gemini": GeminiPlanner,
+        "groq": GroqPlanner,
+    }
+    if planner not in _HILL_CLIMB_PLANNERS:
+        raise typer.BadParameter(
+            f"--planner must be one of {list(_HILL_CLIMB_PLANNERS)} for hill-climb-prompt"
+        )
 
     tasks = load_tasks(tasks_file)
     evaluator = Evaluator()
-    planner_cls = AnthropicPlanner if planner == "anthropic" else GeminiPlanner
+    planner_cls = _HILL_CLIMB_PLANNERS[planner]
 
     def evaluate_fn(prompt: str):
         candidate_planner = planner_cls(system_prompt=prompt)

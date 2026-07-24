@@ -61,6 +61,14 @@ code generation/execution is left as a documented future extension point
   ".[llm]"` and `GEMINI_API_KEY`. Both LLM planners accept a `system_prompt`
   override, used by `hill-climb-prompt` (see below) to evaluate mutated
   prompts without touching the shared default
+- **GroqPlanner**: same approach against the Groq API (OpenAI-compatible;
+  free tier is very generous — no credit card, ~14,400 requests/day as of
+  mid-2026); requires `pip install -e ".[llm]"` and `GROQ_API_KEY`. Exists
+  specifically as a cascade fallback tier: `--cascade
+  "rule-based,gemini,groq"` automatically moves on to Groq once Gemini's
+  much smaller daily quota (~20/day) is exhausted — a 429 there is just
+  another planning failure to the existing cascade logic, no special
+  quota-handling code needed
 - **MockLLMPlanner**: canned-response planner as an LLM-planner stand-in
 - **SafeExecutor**: whitelist-only execution, argument validation, max-step
   limit, structured failure reasons, per-step logging
@@ -89,7 +97,7 @@ code generation/execution is left as a documented future extension point
   ".[vision]"` for the renderer (Pillow) plus `.[llm]` for the vision API
   call — every other command works without either installed
 - **CLI** (Typer): `demo`, `run-task`, `evaluate`, `list-tasks`, `show-task`
-- **118 pytest tests**, all passing; ruff-clean; GitHub Actions CI
+- **134 pytest tests**, all passing; ruff-clean; GitHub Actions CI
 - **Codespaces-ready** via `.devcontainer/devcontainer.json`
 
 ## Architecture
@@ -122,7 +130,7 @@ geniac-cap-practice/
 │   ├── evaluation/           # Evaluator, metrics
 │   ├── tasks/                 # loader.py, sample_tasks.yaml
 │   └── utils/logging.py
-├── tests/                     # 118 pytest tests
+├── tests/                     # 134 pytest tests
 ├── pyproject.toml
 └── README.md
 ```
@@ -137,23 +145,29 @@ cd geniac-cap-practice
 pip install -e ".[dev]"
 ```
 
-To also use `AnthropicPlanner` or `GeminiPlanner`, install the optional `llm`
-extra and set an API key:
+To also use `AnthropicPlanner`, `GeminiPlanner`, or `GroqPlanner`, install
+the optional `llm` extra and set an API key:
 
 ```bash
 pip install -e ".[llm]"
-cp .env.example .env   # then edit .env and set ANTHROPIC_API_KEY=... and/or GEMINI_API_KEY=...
+cp .env.example .env   # then edit .env and set ANTHROPIC_API_KEY=... / GEMINI_API_KEY=... / GROQ_API_KEY=...
 ```
 
 Gemini has a free tier with no credit card required — get a key at
 https://aistudio.google.com/apikey. Note the free tier is rate-limited (a
-handful of requests per minute depending on the model), so running
-`evaluate` across all 14 tasks back-to-back may hit a `429` on a couple of
-tasks; that's an API quota, not a bug — those tasks are recorded as
+handful of requests per minute, and only ~20 requests/day for the current
+default model) so running `evaluate` across many tasks back-to-back may
+hit a `429`; that's an API quota, not a bug — those tasks are recorded as
 `planning_error` and the rest still complete. Use `--delay-seconds` (e.g.
-`--delay-seconds 13` for Gemini's 5-requests-per-minute free tier) to pace
-requests and avoid this. These planners are only needed for
-`--planner anthropic` / `--planner gemini`; every other command works with
+`--delay-seconds 13`) to pace requests and avoid the per-minute limit.
+
+Groq also has a free tier with no credit card required — get a key at
+https://console.groq.com — with a much larger daily quota (~14,400
+requests/day as of mid-2026), so it works well as a cascade fallback once
+Gemini's smaller quota runs out: `--cascade "rule-based,gemini,groq"`.
+
+These planners are only needed for `--planner anthropic` /
+`--planner gemini` / `--planner groq`; every other command works with
 neither the extra installed nor a key set.
 
 To also render scenes and use `VLMPerception` (Phase 4), install the
@@ -201,6 +215,7 @@ python -m geniac_cap.cli evaluate --planner rule-based --tasks-file results/synt
 python -m geniac_cap.cli harvest-vocabulary --provider gemini
 python -m geniac_cap.cli hill-climb-prompt --planner gemini --delay-seconds 13
 python -m geniac_cap.cli bandit-cascade --arms "rule-based;rule-based,gemini" --epsilon 0.2
+python -m geniac_cap.cli evaluate --cascade "rule-based,gemini,groq" --delay-seconds 13
 ```
 
 (If you installed with `pip install -e .`, `geniac-cap ...` also works as a

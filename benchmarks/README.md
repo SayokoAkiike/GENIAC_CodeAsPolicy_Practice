@@ -47,6 +47,14 @@ Stratified so each split has the same proportion of each task pattern
 | `hard_benchmark_v1_train.yaml` | 36 (12/12/12) | 12/36 (33.33%) | `baseline_rule_based_train.json` |
 | `hard_benchmark_v1_validation.yaml` | 12 (4/4/4) | 4/12 (33.33%) | `baseline_rule_based_validation.json` |
 | `hard_benchmark_v1_test.yaml` | 12 (4/4/4) | 4/12 (33.33%) | `baseline_rule_based_test.json` |
+| `train_mini.yaml` | 18 (6/6/6), separately generated (seed 200) | 6/18 (33.33%) | `baseline_rule_based_train_mini.json` |
+
+**Why `train_mini` exists:** a dry run showed a full cascade pass over the
+36-task `train` split needs ~24 LLM calls, which alone exceeds Gemini's
+free-tier daily quota (~20/day). `train_mini` (18 tasks, ~12 LLM calls per
+pass) is small enough for comfortable day-to-day iteration; reserve the
+full `train` split for periodic checkpoints. See
+`docs/rigorous-verification-plan.md` for the budget schedule.
 
 **Usage discipline (see `docs/rigorous-verification-plan.md`):** develop
 and iterate (vocabulary distillation, prompt hill-climbing) against

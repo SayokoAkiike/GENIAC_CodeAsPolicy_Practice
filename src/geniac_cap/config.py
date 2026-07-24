@@ -34,6 +34,7 @@ class Settings:
     openai_api_key: str | None = os.environ.get("OPENAI_API_KEY") or None
     anthropic_api_key: str | None = os.environ.get("ANTHROPIC_API_KEY") or None
     gemini_api_key: str | None = os.environ.get("GEMINI_API_KEY") or None
+    groq_api_key: str | None = os.environ.get("GROQ_API_KEY") or None
     model_name: str | None = os.environ.get("MODEL_NAME") or None
     log_level: str = os.environ.get("GENIAC_CAP_LOG_LEVEL", "INFO")
     random_seed: int = int(os.environ.get("GENIAC_CAP_SEED", DEFAULT_RANDOM_SEED))

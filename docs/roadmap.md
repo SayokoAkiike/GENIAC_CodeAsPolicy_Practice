@@ -20,6 +20,10 @@ one capability on top of a working, tested foundation.
 - [x] `GeminiPlanner` implemented the same way (`--planner gemini`), using
   Google's free tier (`GEMINI_API_KEY`, no credit card required); both LLM
   planners share one prompt (`planners/llm_prompts.py`) for a fair comparison
+- [x] `GroqPlanner` implemented the same way (`--planner groq`), using
+  Groq's much larger free-tier daily quota as an automatic cascade
+  fallback once Gemini's smaller quota is exhausted
+  (`--cascade "rule-based,gemini,groq"`)
 - [ ] Implement `OpenAIPlanner` / `LocalModelPlanner` the same way
 - [x] Compared GeminiPlanner vs. RuleBasedPlanner on the 12 single-object
   tasks (both 100%, Gemini used fewer average steps by skipping redundant

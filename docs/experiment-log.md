@@ -361,3 +361,34 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
   with real Anthropic/Gemini calls, using `--compare-to
   benchmarks/baseline_rule_based_v1.json` each time to get real,
   comparable deltas for the README's Model improvement log.
+
+## Added GroqPlanner as a multi-provider cascade fallback
+
+- **Date:** 2026-07-24
+- **Commit:** (fill in after pushing)
+- **Change:** Added `GroqPlanner` (`src/geniac_cap/planners/groq_planner.py`),
+  mirroring AnthropicPlanner/GeminiPlanner's design (lazy import, injectable
+  client, `system_prompt` override, `supports_feedback`). Groq's API is
+  OpenAI-compatible; its `response_format={"type":"json_object"}` requires
+  a top-level JSON *object*, so a Groq-specific instruction asks the model
+  to wrap the action array as `{"actions": [...]}` (parsing accepts both
+  the wrapped and bare-array shape). Registered as `--planner groq`,
+  usable in `--cascade`/`bandit-cascade`/`hill-climb-prompt`.
+- **Motivation:** Gemini's free tier is limited to ~20 requests/day for
+  the current default model, which was already hit once during Phase 4
+  testing. Groq's free tier is much larger (~14,400 requests/day, no
+  credit card), so `--cascade "rule-based,gemini,groq"` gives automatic,
+  zero-extra-code fallback once Gemini's quota is exhausted -- a 429 from
+  Gemini is just another planning failure to the existing cascade logic in
+  evaluation/cascade.py.
+- **Verified:** fake-client tests confirm JSON parsing (both bare-array
+  and `{"actions": [...]}`-wrapped responses), markdown-fence stripping,
+  the feedback/replan loop, and custom `system_prompt` injection. A real
+  3-tier CLI dry run (`run-task --cascade "rule-based,gemini,groq"`, no
+  keys set) confirmed the cascade correctly tries all three tiers in order
+  and reports the last one's failure reason -- no crashes.
+- **Next action:** get a real Groq API key (free, https://console.groq.com)
+  and re-run the Step 1/5 real-API verification plan
+  (docs/rigorous-verification-plan.md) using `--cascade
+  "rule-based,gemini,groq"` on `benchmarks/train_mini.yaml`, so Gemini's
+  daily quota no longer blocks a full day's iteration.
