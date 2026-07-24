@@ -1,0 +1,378 @@
+{
+  "planner_name": "rule-based",
+  "total_tasks": 36,
+  "successful_tasks": 12,
+  "failed_tasks": 24,
+  "success_rate": 0.3333333333333333,
+  "planning_error_count": 0,
+  "execution_error_count": 24,
+  "invalid_action_count": 0,
+  "average_steps": 3.6666666666666665,
+  "average_execution_time": 4.6559222224592155e-05,
+  "failure_breakdown": {
+    "precondition_failed": 12,
+    "goal_not_achieved": 12
+  },
+  "task_results": [
+    {
+      "task_id": "synth_container_011",
+      "instruction": "Open the supply crate and put the orange block inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 0.00015979599999127458,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_019",
+      "instruction": "Open the storage box and put the blue ring inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 0.00011150499997825136,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_017",
+      "instruction": "Open the supply crate and put the green cylinder inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 5.324800000039431e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_015",
+      "instruction": "Open the toolbox and put the white ball inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 5.054999999742904e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_001",
+      "instruction": "Open the storage box and put the white cube inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 4.7956999992493365e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_018",
+      "instruction": "Open the drawer and put the black cone inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 4.653999999959524e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_012",
+      "instruction": "Open the drawer and put the green ball inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 5.5959999997412524e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_003",
+      "instruction": "Open the toolbox and put the white block inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 5.037799999740855e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_004",
+      "instruction": "Open the chest and put the black cube inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 4.558000000542961e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_010",
+      "instruction": "Open the chest and put the blue ball inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 4.567999999949279e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_006",
+      "instruction": "Open the drawer and put the red ball inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 8.763100001374369e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_008",
+      "instruction": "Open the locker and put the yellow ring inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 5.2666000016188264e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_014",
+      "instruction": "Move the purple disc to the rack",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.5616000016270846e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_012",
+      "instruction": "Move the red cube to the cabinet",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.2641000015255486e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_017",
+      "instruction": "Move the white cylinder to the bin",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.814100000136932e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_001",
+      "instruction": "Move the green ring to the cart",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.8340000000071086e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_018",
+      "instruction": "Move the red block to the shelf",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.0262999981923713e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_005",
+      "instruction": "Move the yellow cylinder to the cabinet",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.0724000023619737e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_015",
+      "instruction": "Move the black ball to the counter",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 4.075000001080298e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_008",
+      "instruction": "Move the green cube to the rack",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.3865000002842862e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_019",
+      "instruction": "Move the purple ball to the bin",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.080300001239266e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_020",
+      "instruction": "Move the orange cylinder to the cart",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.056399998195957e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_013",
+      "instruction": "Move the purple cone to the bin",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.1934999978157066e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_007",
+      "instruction": "Move the white block to the table",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.051600000640974e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_019",
+      "instruction": "Move both the white ring and the blue ring to the bench",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 5.089600000474093e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_020",
+      "instruction": "Move both the black cylinder and the orange disc to the shelf",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 6.690899999739486e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_018",
+      "instruction": "Move both the blue cylinder and the yellow prism to the cabinet",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.557900001600501e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_008",
+      "instruction": "Move both the red ball and the purple ring to the cabinet",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.397300000391624e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_005",
+      "instruction": "Move both the orange cone and the red block to the counter",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.563900000675858e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_017",
+      "instruction": "Move both the yellow ball and the green ring to the counter",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.630699999097487e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_007",
+      "instruction": "Move both the green cone and the white prism to the bench",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.5382000024574154e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_009",
+      "instruction": "Move both the red ring and the white cube to the desk",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.468800000267947e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_010",
+      "instruction": "Move both the purple cylinder and the green block to the desk",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.386800000588664e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_015",
+      "instruction": "Move both the orange ring and the red cube to the cabinet",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.373400000190486e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_002",
+      "instruction": "Move both the white ball and the orange block to the desk",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 5.3293000007670344e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_014",
+      "instruction": "Move both the green ball and the white cone to the bin",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.421500000262313e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    }
+  ]
+}

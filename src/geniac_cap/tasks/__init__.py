@@ -1,4 +1,12 @@
 from geniac_cap.tasks.generator import generate_tasks
 from geniac_cap.tasks.loader import load_tasks, load_tasks_from_file, save_tasks_to_yaml
+from geniac_cap.tasks.split import TaskSplit, split_tasks
 
-__all__ = ["load_tasks", "load_tasks_from_file", "save_tasks_to_yaml", "generate_tasks"]
+__all__ = [
+    "load_tasks",
+    "load_tasks_from_file",
+    "save_tasks_to_yaml",
+    "generate_tasks",
+    "split_tasks",
+    "TaskSplit",
+]

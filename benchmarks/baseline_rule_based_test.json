@@ -1,0 +1,138 @@
+{
+  "planner_name": "rule-based",
+  "total_tasks": 12,
+  "successful_tasks": 4,
+  "failed_tasks": 8,
+  "success_rate": 0.3333333333333333,
+  "planning_error_count": 0,
+  "execution_error_count": 8,
+  "invalid_action_count": 0,
+  "average_steps": 3.6666666666666665,
+  "average_execution_time": 5.362749999449079e-05,
+  "failure_breakdown": {
+    "precondition_failed": 4,
+    "goal_not_achieved": 4
+  },
+  "task_results": [
+    {
+      "task_id": "synth_container_009",
+      "instruction": "Open the toolbox and put the white cylinder inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 0.0001191829999811489,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_002",
+      "instruction": "Open the locker and put the orange cylinder inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 6.72409999822321e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_014",
+      "instruction": "Open the locker and put the yellow prism inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 5.522600000062994e-05,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_container_013",
+      "instruction": "Open the storage box and put the black block inside",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 3,
+      "execution_time_seconds": 0.00012535500002286426,
+      "failure_reason": "precondition_failed",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_011",
+      "instruction": "Move the purple prism to the bin",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.412800000684001e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_003",
+      "instruction": "Move the white ring to the cart",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.1693999997296487e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_004",
+      "instruction": "Move the red ball to the bin",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 2.2358999984817274e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_single_010",
+      "instruction": "Move the purple cylinder to the shelf",
+      "planner_name": "rule-based",
+      "success": true,
+      "steps": 4,
+      "execution_time_seconds": 1.945799999703013e-05,
+      "failure_reason": null,
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_016",
+      "instruction": "Move both the red prism and the yellow cone to the cart",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.6716000014157544e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_001",
+      "instruction": "Move both the black prism and the blue ball to the cabinet",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 5.3623999974661274e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_013",
+      "instruction": "Move both the black block and the purple cone to the bin",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.3591999997261155e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    },
+    {
+      "task_id": "synth_two_object_003",
+      "instruction": "Move both the black ball and the yellow cube to the desk",
+      "planner_name": "rule-based",
+      "success": false,
+      "steps": 4,
+      "execution_time_seconds": 4.495399997495042e-05,
+      "failure_reason": "goal_not_achieved",
+      "replanned": false
+    }
+  ]
+}

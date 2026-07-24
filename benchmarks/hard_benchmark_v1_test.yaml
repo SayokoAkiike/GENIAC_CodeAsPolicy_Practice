@@ -1,0 +1,276 @@
+- task_id: synth_container_009
+  instruction: Open the toolbox and put the white cylinder inside
+  initial_state:
+    robot_location: rack
+    object_locations:
+      white_cylinder: rack
+    locations:
+    - rack
+    - toolbox
+    objects:
+    - white_cylinder
+    containers:
+    - toolbox
+  goal_state:
+    object_locations:
+      white_cylinder: toolbox
+  difficulty: hard
+  category: office
+  expected_objects:
+  - white_cylinder
+  expected_locations:
+  - rack
+  - toolbox
+- task_id: synth_container_002
+  instruction: Open the locker and put the orange cylinder inside
+  initial_state:
+    robot_location: table
+    object_locations:
+      orange_cylinder: table
+    locations:
+    - table
+    - locker
+    objects:
+    - orange_cylinder
+    containers:
+    - locker
+  goal_state:
+    object_locations:
+      orange_cylinder: locker
+  difficulty: hard
+  category: office
+  expected_objects:
+  - orange_cylinder
+  expected_locations:
+  - table
+  - locker
+- task_id: synth_container_014
+  instruction: Open the locker and put the yellow prism inside
+  initial_state:
+    robot_location: shelf
+    object_locations:
+      yellow_prism: shelf
+    locations:
+    - shelf
+    - locker
+    objects:
+    - yellow_prism
+    containers:
+    - locker
+  goal_state:
+    object_locations:
+      yellow_prism: locker
+  difficulty: hard
+  category: office
+  expected_objects:
+  - yellow_prism
+  expected_locations:
+  - shelf
+  - locker
+- task_id: synth_container_013
+  instruction: Open the storage box and put the black block inside
+  initial_state:
+    robot_location: cabinet
+    object_locations:
+      black_block: cabinet
+    locations:
+    - cabinet
+    - storage_box
+    objects:
+    - black_block
+    containers:
+    - storage_box
+  goal_state:
+    object_locations:
+      black_block: storage_box
+  difficulty: hard
+  category: office
+  expected_objects:
+  - black_block
+  expected_locations:
+  - cabinet
+  - storage_box
+- task_id: synth_single_011
+  instruction: Move the purple prism to the bin
+  initial_state:
+    robot_location: table
+    object_locations:
+      purple_prism: table
+    locations:
+    - table
+    - bin
+    objects:
+    - purple_prism
+  goal_state:
+    object_locations:
+      purple_prism: bin
+  difficulty: easy
+  category: household
+  expected_objects:
+  - purple_prism
+  expected_locations:
+  - table
+  - bin
+- task_id: synth_single_003
+  instruction: Move the white ring to the cart
+  initial_state:
+    robot_location: desk
+    object_locations:
+      white_ring: desk
+    locations:
+    - desk
+    - cart
+    objects:
+    - white_ring
+  goal_state:
+    object_locations:
+      white_ring: cart
+  difficulty: easy
+  category: household
+  expected_objects:
+  - white_ring
+  expected_locations:
+  - desk
+  - cart
+- task_id: synth_single_004
+  instruction: Move the red ball to the bin
+  initial_state:
+    robot_location: desk
+    object_locations:
+      red_ball: desk
+    locations:
+    - desk
+    - bin
+    objects:
+    - red_ball
+  goal_state:
+    object_locations:
+      red_ball: bin
+  difficulty: easy
+  category: household
+  expected_objects:
+  - red_ball
+  expected_locations:
+  - desk
+  - bin
+- task_id: synth_single_010
+  instruction: Move the purple cylinder to the shelf
+  initial_state:
+    robot_location: desk
+    object_locations:
+      purple_cylinder: desk
+    locations:
+    - desk
+    - shelf
+    objects:
+    - purple_cylinder
+  goal_state:
+    object_locations:
+      purple_cylinder: shelf
+  difficulty: easy
+  category: household
+  expected_objects:
+  - purple_cylinder
+  expected_locations:
+  - desk
+  - shelf
+- task_id: synth_two_object_016
+  instruction: Move both the red prism and the yellow cone to the cart
+  initial_state:
+    robot_location: tray
+    object_locations:
+      red_prism: tray
+      yellow_cone: tray
+    locations:
+    - tray
+    - cart
+    objects:
+    - red_prism
+    - yellow_cone
+  goal_state:
+    object_locations:
+      red_prism: cart
+      yellow_cone: cart
+  difficulty: hard
+  category: household
+  expected_objects:
+  - red_prism
+  - yellow_cone
+  expected_locations:
+  - tray
+  - cart
+- task_id: synth_two_object_001
+  instruction: Move both the black prism and the blue ball to the cabinet
+  initial_state:
+    robot_location: tray
+    object_locations:
+      black_prism: tray
+      blue_ball: tray
+    locations:
+    - tray
+    - cabinet
+    objects:
+    - black_prism
+    - blue_ball
+  goal_state:
+    object_locations:
+      black_prism: cabinet
+      blue_ball: cabinet
+  difficulty: hard
+  category: household
+  expected_objects:
+  - black_prism
+  - blue_ball
+  expected_locations:
+  - tray
+  - cabinet
+- task_id: synth_two_object_013
+  instruction: Move both the black block and the purple cone to the bin
+  initial_state:
+    robot_location: desk
+    object_locations:
+      black_block: desk
+      purple_cone: desk
+    locations:
+    - desk
+    - bin
+    objects:
+    - black_block
+    - purple_cone
+  goal_state:
+    object_locations:
+      black_block: bin
+      purple_cone: bin
+  difficulty: hard
+  category: household
+  expected_objects:
+  - black_block
+  - purple_cone
+  expected_locations:
+  - desk
+  - bin
+- task_id: synth_two_object_003
+  instruction: Move both the black ball and the yellow cube to the desk
+  initial_state:
+    robot_location: bin
+    object_locations:
+      black_ball: bin
+      yellow_cube: bin
+    locations:
+    - bin
+    - desk
+    objects:
+    - black_ball
+    - yellow_cube
+  goal_state:
+    object_locations:
+      black_ball: desk
+      yellow_cube: desk
+  difficulty: hard
+  category: household
+  expected_objects:
+  - black_ball
+  - yellow_cube
+  expected_locations:
+  - bin
+  - desk

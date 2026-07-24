@@ -31,6 +31,30 @@ vocabulary distillation, prompt hill-climbing, bandit selection) to
 demonstrate an actual improvement, unlike the original 14-task set where
 only 2 tasks were out of reach.
 
+## Train / validation / test splits
+
+Generated with (seed fixed for reproducibility):
+
+```bash
+python -m geniac_cap.cli split-benchmark --input benchmarks/hard_benchmark_v1.yaml --seed 0 --output-dir benchmarks
+```
+
+Stratified so each split has the same proportion of each task pattern
+(single-object/two-object/container):
+
+| Split | Tasks | RuleBasedPlanner baseline | Baseline file |
+|---|---|---|---|
+| `hard_benchmark_v1_train.yaml` | 36 (12/12/12) | 12/36 (33.33%) | `baseline_rule_based_train.json` |
+| `hard_benchmark_v1_validation.yaml` | 12 (4/4/4) | 4/12 (33.33%) | `baseline_rule_based_validation.json` |
+| `hard_benchmark_v1_test.yaml` | 12 (4/4/4) | 4/12 (33.33%) | `baseline_rule_based_test.json` |
+
+**Usage discipline (see `docs/rigorous-verification-plan.md`):** develop
+and iterate (vocabulary distillation, prompt hill-climbing) against
+`train` and `validation` only. Touch `test` exactly once, at the end, for
+the number that actually goes into the README's Model improvement log —
+otherwise a reported "improvement" may just mean the technique overfit to
+these specific 60 tasks.
+
 ## How to use this for future roadmap verification
 
 Re-run any planner/technique against this fixed benchmark and diff against

@@ -41,6 +41,7 @@ from geniac_cap.planners.vocabulary_distiller import (
 )
 from geniac_cap.tasks.generator import generate_tasks
 from geniac_cap.tasks.loader import get_task_by_id, load_tasks, save_tasks_to_yaml
+from geniac_cap.tasks.split import split_tasks
 from geniac_cap.utils.logging import configure_logging, get_logger
 
 app = typer.Typer(add_completion=False, help="GENIAC Code-as-Policy practice CLI")
@@ -264,6 +265,48 @@ def hill_climb_prompt(
             "planners/llm_prompts.py):[/bold]"
         )
         console.print(escape(result.final_prompt))
+
+
+@app.command("split-benchmark")
+def split_benchmark(
+    input_path: str = typer.Option(..., "--input", help="Path to a tasks YAML to split"),
+    train: float = typer.Option(0.6, "--train", help="Train split ratio"),
+    val: float = typer.Option(0.2, "--val", help="Validation split ratio"),
+    test: float = typer.Option(0.2, "--test", help="Test split ratio"),
+    seed: int = typer.Option(0, "--seed", help="Random seed, for a reproducible split"),
+    output_dir: str = typer.Option(
+        "benchmarks", "--output-dir", help="Directory to write train/val/test YAML files into"
+    ),
+) -> None:
+    """Split a task set into stratified train/validation/test files (see
+    docs/rigorous-verification-plan.md).
+
+    Use this before tuning-based techniques (vocabulary distillation,
+    prompt hill-climbing): develop against train/validation, and touch
+    test only once, at the end, for the number that goes in the README's
+    Model improvement log.
+    """
+
+    tasks = load_tasks(input_path)
+    result = split_tasks(tasks, train_ratio=train, val_ratio=val, test_ratio=test, seed=seed)
+
+    stem = Path(input_path).stem
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    splits = (
+        ("train", result.train),
+        ("validation", result.validation),
+        ("test", result.test),
+    )
+    paths = {}
+    for name, subset in splits:
+        path = out_dir / f"{stem}_{name}.yaml"
+        save_tasks_to_yaml(subset, path)
+        paths[name] = path
+
+    console.print(f"Split {len(tasks)} task(s) from {input_path}:")
+    for name, subset in splits:
+        console.print(f"  {name}: {len(subset)} tasks -> {paths[name]}")
 
 
 @app.command("generate-tasks")
