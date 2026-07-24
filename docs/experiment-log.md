@@ -392,3 +392,48 @@ after running `python -m geniac_cap.cli evaluate --planner <name>`.
   (docs/rigorous-verification-plan.md) using `--cascade
   "rule-based,gemini,groq"` on `benchmarks/train_mini.yaml`, so Gemini's
   daily quota no longer blocks a full day's iteration.
+
+## First real 3-tier cascade verification (rule-based -> gemini -> groq) on train_mini
+
+- **Date:** 2026-07-24
+- **Commit:** (fill in after pushing)
+- **Command:** `evaluate --cascade "rule-based,gemini,groq" --tasks-file benchmarks/train_mini.yaml --delay-seconds 13 --compare-to benchmarks/baseline_rule_based_train_mini.json`
+- **Dataset:** `benchmarks/train_mini.yaml` (18 tasks: 6 single-object, 6
+  two-object, 6 container) -- the "genuinely hard" benchmark created
+  specifically because the original 14-task sample set had no headroom
+- **Result:** success_rate **33.33% -> 100.00% (+66.67%)**, average steps
+  3.67 -> 5.83. Full real breakdown by tier:
+  - tier 1 (rule-based): 6/18 (all single-object, as designed)
+  - tier 2 (gemini): 3/18 (2 two-object, 1 container) -- succeeded before
+    hitting the day's already-partially-used quota
+  - tier 3 (groq): 9/18 -- caught every task where Gemini returned `429`
+    (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`, limit 20/day)
+- **This is real, not simulated (✅):** no fake/mock client was used. This
+  is the first entry in the log that is a genuine, verified improvement on
+  a benchmark designed to have real headroom -- not a mechanism check
+  against a contrived failure mode.
+- **Direct validation of today's Groq addition:** without the groq tier,
+  this run would have stopped at rule-based(6) + gemini(3) = **9/18
+  (50%)**, since Gemini's daily quota was already exhausted partway
+  through testing today and there would have been no third tier to catch
+  the rest. Groq specifically rescued 9/9 remaining tasks. This is a
+  concrete, not hypothetical, demonstration of why the cascade fallback
+  chain matters.
+- **Bonus finding -- the feedback loop caught a real mistake:** on
+  `synth_container_006`, GroqPlanner's first attempt incorrectly referenced
+  the container name ("toolbox") as if it were a pickable object, failing
+  with `object_not_found`. The existing feedback/replan mechanism (Step 4
+  infrastructure, `supports_feedback=True`) triggered automatically, and
+  GroqPlanner's second attempt succeeded. This is the first real (not
+  simulated) evidence that the feedback loop recovers from an actual model
+  mistake, not just a contrived one.
+- **Caveat (per docs/rigorous-verification-plan.md):** this used
+  `train_mini`, not the held-out `test` split -- but that's fine here
+  because the cascade is a fixed procedure, not something tuned against
+  these specific results (unlike Steps 3/4/5, which should still reserve
+  `test` for their final numbers).
+- **Next action:** run the same command against the full `train` split
+  (36 tasks) and eventually the held-out `test` split, to confirm this
+  holds at larger scale; re-run Steps 3 (vocabulary distillation with a
+  real key) and 5 (bandit) for real now that a working 3-tier fallback
+  exists to avoid being blocked by Gemini's quota mid-run.
