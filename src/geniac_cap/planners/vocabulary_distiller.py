@@ -28,6 +28,7 @@ logger = get_logger(__name__)
 
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-5"
 DEFAULT_GEMINI_MODEL = "gemini-flash-latest"
+DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 
 _IDENTIFY_SYSTEM_PROMPT = """You help maintain a robot instruction parser's \
 vocabulary. Given an instruction and lists of known object/location names, \
@@ -102,27 +103,35 @@ class VocabularyDistiller:
         client: object | None = None,
         api_key: str | None = None,
     ) -> None:
-        if provider not in ("anthropic", "gemini"):
+        if provider not in ("anthropic", "gemini", "groq"):
             raise PlanningError(
-                f"Unknown provider: '{provider}' (expected anthropic/gemini)"
+                f"Unknown provider: '{provider}' (expected anthropic/gemini/groq)"
             )
         self._provider = provider
-        self._model = model or (
-            DEFAULT_ANTHROPIC_MODEL if provider == "anthropic" else DEFAULT_GEMINI_MODEL
-        )
+        self._model = model or {
+            "anthropic": DEFAULT_ANTHROPIC_MODEL,
+            "gemini": DEFAULT_GEMINI_MODEL,
+            "groq": DEFAULT_GROQ_MODEL,
+        }[provider]
         self._client = client
         if api_key is not None:
             self._api_key = api_key
         elif provider == "anthropic":
             self._api_key = settings.anthropic_api_key
-        else:
+        elif provider == "gemini":
             self._api_key = settings.gemini_api_key
+        else:
+            self._api_key = settings.groq_api_key
 
     def _get_client(self):
         if self._client is not None:
             return self._client
         if not self._api_key:
-            env_var = "ANTHROPIC_API_KEY" if self._provider == "anthropic" else "GEMINI_API_KEY"
+            env_var = {
+                "anthropic": "ANTHROPIC_API_KEY",
+                "gemini": "GEMINI_API_KEY",
+                "groq": "GROQ_API_KEY",
+            }[self._provider]
             raise PlanningError(
                 f"{env_var} is not set. Copy .env.example to .env and set it "
                 f"to use VocabularyDistiller(provider='{self._provider}')."
@@ -136,7 +145,7 @@ class VocabularyDistiller:
                     "pip install -e '.[llm]'"
                 ) from exc
             self._client = anthropic.Anthropic(api_key=self._api_key)
-        else:
+        elif self._provider == "gemini":
             try:
                 from google import genai
             except ImportError as exc:
@@ -145,6 +154,15 @@ class VocabularyDistiller:
                     "pip install -e '.[llm]'"
                 ) from exc
             self._client = genai.Client(api_key=self._api_key)
+        else:
+            try:
+                from groq import Groq
+            except ImportError as exc:
+                raise PlanningError(
+                    "The 'groq' package is not installed. Install it with: "
+                    "pip install -e '.[llm]'"
+                ) from exc
+            self._client = Groq(api_key=self._api_key)
         return self._client
 
     def identify(
@@ -165,8 +183,10 @@ class VocabularyDistiller:
         try:
             if self._provider == "anthropic":
                 text = self._call_anthropic(client, prompt)
-            else:
+            elif self._provider == "gemini":
                 text = self._call_gemini(client, prompt)
+            else:
+                text = self._call_groq(client, prompt)
         except PlanningError:
             raise
         except Exception as exc:  # network/API errors of any kind
@@ -202,6 +222,26 @@ class VocabularyDistiller:
         text = getattr(response, "text", None)
         if not text:
             raise PlanningError("Gemini response contained no text content")
+        return text
+
+    def _call_groq(self, client, prompt: str) -> str:
+        # Groq's response_format=json_object needs a top-level JSON object;
+        # _IDENTIFY_SYSTEM_PROMPT already asks for an object (unlike the
+        # action-plan prompt), so no extra wrapper instruction is needed here.
+        response = client.chat.completions.create(
+            model=self._model,
+            messages=[
+                {"role": "system", "content": _IDENTIFY_SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            response_format={"type": "json_object"},
+        )
+        try:
+            text = response.choices[0].message.content
+        except (AttributeError, IndexError) as exc:
+            raise PlanningError(f"Unexpected Groq response shape: {exc}") from exc
+        if not text:
+            raise PlanningError("Groq response contained no text content")
         return text
 
     @staticmethod

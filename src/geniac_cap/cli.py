@@ -112,7 +112,7 @@ def list_tasks() -> None:
 @app.command("harvest-vocabulary")
 def harvest_vocabulary(
     provider: str = typer.Option(
-        "anthropic", "--provider", help="Vision/LLM provider to ask: anthropic or gemini"
+        "anthropic", "--provider", help="LLM provider to ask: anthropic, gemini, or groq"
     ),
     output: str = typer.Option(
         "results/vocabulary_proposal.json", "--output", help="Where to save the proposal JSON"

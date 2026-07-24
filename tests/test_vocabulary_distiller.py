@@ -127,3 +127,45 @@ def test_proposal_as_python_snippet_contains_proposed_entries():
     snippet = proposal.as_python_snippet()
     assert "red_block" in snippet
     assert "crimson block" in snippet
+
+
+def test_vocabulary_distiller_works_with_groq_provider():
+    from dataclasses import dataclass, field
+
+    @dataclass
+    class _FakeMessage:
+        content: str
+
+    @dataclass
+    class _FakeChoice:
+        message: _FakeMessage
+
+    @dataclass
+    class _FakeGroqResponse:
+        choices: list = field(default_factory=list)
+
+    class _FakeGroqCompletions:
+        def create(self, **kwargs):
+            payload = json.dumps(
+                {
+                    "object_name": "red_block",
+                    "object_phrase": "crimson block",
+                    "location_name": None,
+                    "location_phrase": None,
+                }
+            )
+            return _FakeGroqResponse(choices=[_FakeChoice(message=_FakeMessage(content=payload))])
+
+    class _FakeGroqChat:
+        def __init__(self):
+            self.completions = _FakeGroqCompletions()
+
+    class _FakeGroqClient:
+        def __init__(self):
+            self.chat = _FakeGroqChat()
+
+    distiller = VocabularyDistiller(provider="groq", client=_FakeGroqClient())
+    proposal = distiller.harvest(
+        ["Move the crimson block somewhere"], known_objects=["red_block"], known_locations=[]
+    )
+    assert proposal.object_synonyms == {"red_block": ["crimson block"]}
